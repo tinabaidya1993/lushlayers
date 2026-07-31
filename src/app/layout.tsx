@@ -1,17 +1,14 @@
 import type { Metadata } from 'next';
-import Navbar from '@/components/layout/Navbar';
-import Footer from '@/components/layout/Footer';
-import FloatingWhatsApp from '@/components/ui/FloatingWhatsApp';
-import GoToTop from '@/components/ui/GoToTop';
+import PublicLayoutShell from '@/components/layout/PublicLayoutShell';
 import './globals.css';
 
 export const metadata: Metadata = {
   title: {
-    default: 'Lush Layers | Made With Love',
+    default: 'Lush Layers | Fresh 100% Eggless Home-Made Cakes by Tina Baidya',
     template: '%s | Lush Layers',
   },
-  description: 'Ultra-luxurious bespoke wedding tiers, artisanal celebration cakes, and 100% eggless modern edible sculpture. Direct WhatsApp order booking.',
-  keywords: ['Lush Layers', 'Made With Love', 'Luxury Cakes', 'Bespoke Wedding Cakes', 'Eggless Cakes Kolkata', 'Custom Cake Studio'],
+  description: 'Freshly home-baked 100% eggless luxury cakes, bespoke wedding tiers, and artisanal birthday cakes by Tina Baidya in Kolkata. Home delivery available via WhatsApp booking.',
+  keywords: ['Lush Layers', 'Tina Baidya', 'Home Made Cakes Kolkata', 'Eggless Home Bakery', 'Fresh Home Baked Cakes', 'Custom Cake Studio Kolkata'],
   icons: {
     icon: [
       { url: '/logo.jpg', type: 'image/jpeg' },
@@ -34,11 +31,7 @@ export default function RootLayout({
         <link rel="apple-touch-icon" href="/logo.jpg" />
       </head>
       <body className="bg-cream-100 text-charcoal-900 antialiased min-h-screen flex flex-col justify-between selection:bg-gold-500 selection:text-white max-w-full overflow-x-hidden">
-        <Navbar />
-        <div className="flex-grow w-full">{children}</div>
-        <Footer />
-        <FloatingWhatsApp />
-        <GoToTop />
+        <PublicLayoutShell>{children}</PublicLayoutShell>
       </body>
     </html>
   );

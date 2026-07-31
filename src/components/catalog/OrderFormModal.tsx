@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect } from 'react';
 import Image from 'next/image';
-import { X, Sparkles, MessageCircle, CheckCircle2, Upload, Calendar, Clock, MapPin, User, Phone, Check } from 'lucide-react';
+import { X, Sparkles, MessageCircle, CheckCircle2, Upload, Check } from 'lucide-react';
 import { CakeItem } from '@/types';
 
 interface OrderFormModalProps {
@@ -24,6 +24,18 @@ export default function OrderFormModal({
   selectedShape,
   onClose,
 }: OrderFormModalProps) {
+  // Lock background body scroll when order modal is active
+  useEffect(() => {
+    if (cake) {
+      document.body.style.overflow = 'hidden';
+    } else {
+      document.body.style.overflow = 'auto';
+    }
+    return () => {
+      document.body.style.overflow = 'auto';
+    };
+  }, [cake]);
+
   if (!cake) return null;
 
   const defaultWeight = selectedWeightOption || {
@@ -141,16 +153,16 @@ export default function OrderFormModal({
   };
 
   return (
-    <div className="fixed inset-0 z-[1000] bg-charcoal-900/70 backdrop-blur-xs flex items-center justify-center p-3 sm:p-4 overflow-y-auto">
-      <div className="bg-white w-full max-w-2xl rounded-3xl p-5 sm:p-7 shadow-2xl border border-warmgray-200 space-y-5 my-6 max-h-[92vh] overflow-y-auto text-xs text-charcoal-900 animate-fade-in relative">
+    <div className="fixed inset-0 z-[1000] bg-charcoal-900/75 backdrop-blur-md flex items-center justify-center p-3 sm:p-4 overflow-hidden">
+      <div className="bg-white w-full max-w-2xl rounded-3xl p-5 sm:p-7 shadow-2xl border border-warmgray-200 space-y-5 my-auto max-h-[90vh] overflow-y-auto text-xs text-charcoal-900 animate-fade-in relative">
         
         {/* Close Button */}
         <button
           onClick={onClose}
-          className="absolute top-4 right-4 p-2 text-warmgray-400 hover:text-charcoal-900 rounded-full bg-cream-50"
+          className="absolute top-4 right-4 z-20 w-9 h-9 rounded-full bg-gold-500 hover:bg-gold-400 text-charcoal-950 flex items-center justify-center font-bold transition-all shadow-md cursor-pointer border border-gold-300 active:scale-90"
           aria-label="Close form"
         >
-          <X className="w-5 h-5" />
+          <X className="w-5 h-5 stroke-[2.5]" />
         </button>
 
         {/* SUCCESS SCREEN EXPERIENCE */}
@@ -192,7 +204,7 @@ export default function OrderFormModal({
         ) : (
           /* ONE-PAGE RESPONSIVE ORDER FORM */
           <>
-            <div className="border-b border-warmgray-200 pb-3">
+            <div className="border-b border-warmgray-200 pb-3 pr-8">
               <div className="inline-flex items-center space-x-1.5 px-3 py-1 rounded-full bg-gold-50 border border-gold-300 text-gold-700 mb-1">
                 <Sparkles className="w-3.5 h-3.5" />
                 <span className="text-[10px] uppercase font-bold tracking-wider">One-Page WhatsApp Booking</span>
@@ -355,7 +367,7 @@ export default function OrderFormModal({
                   />
                 </div>
 
-                {/* Upload Reference Image to Cloudinary */}
+                {/* Upload Reference Image */}
                 <div>
                   <label className="block font-bold text-warmgray-700 mb-1">Upload Reference Image (Cloudinary)</label>
                   <div className="flex items-center space-x-3">

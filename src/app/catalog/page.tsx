@@ -110,15 +110,15 @@ export default function CatalogPage() {
         <div className="max-w-7xl mx-auto text-center space-y-2.5 relative z-10">
           <div className="inline-flex items-center space-x-2 px-4 py-1 rounded-full bg-white border border-gold-400 text-gold-700 shadow-sm">
             <Sparkles className="w-3.5 h-3.5 text-gold-600" />
-            <span className="text-[11px] uppercase tracking-[0.2em] font-bold">World-Class Pastry Atelier</span>
+            <span className="text-[11px] uppercase tracking-[0.2em] font-bold">Bespoke Cake Studio by Tina Baidya</span>
           </div>
           
           <h1 className="font-serif text-3xl sm:text-5xl md:text-6xl text-charcoal-900 tracking-tight font-bold">
-            Haute Couture Cake Gallery
+            Artisanal Cake Gallery by Tina Baidya
           </h1>
 
           <p className="text-xs sm:text-sm text-warmgray-600 max-w-xl mx-auto font-normal leading-relaxed">
-            Browse our signature designs. Filter by flavor, size, and dietary preference. Order directly via WhatsApp.
+            Browse our signature designs handcrafted by Tina Baidya. Filter by flavor, size, and dietary preference. Order directly via WhatsApp.
           </p>
         </div>
       </section>
@@ -143,7 +143,7 @@ export default function CatalogPage() {
           </span>
         </div>
 
-        {/* Dynamic Responsive Grid Layout (2 cols mobile -> 3 cols tablet -> 4 cols desktop) */}
+        {/* Dynamic Responsive Grid Layout */}
         {filteredCakes.length > 0 ? (
           <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3.5 sm:gap-6">
             {filteredCakes.map((cake) => (

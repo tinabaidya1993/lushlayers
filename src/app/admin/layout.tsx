@@ -17,10 +17,10 @@ import {
   Search,
   Plus,
   Sparkles,
-  User,
   Menu,
   X,
-  ShieldCheck
+  ShieldCheck,
+  Star
 } from 'lucide-react';
 
 interface AuthUser {
@@ -86,7 +86,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
     return (
       <div className="min-h-screen bg-cream-100 flex flex-col items-center justify-center text-charcoal-900 text-xs font-bold space-y-3">
         <Sparkles className="w-6 h-6 text-gold-600 animate-spin" />
-        <span className="uppercase tracking-widest text-gold-700 font-bold">Verifying Admin JWT Security Token...</span>
+        <span className="uppercase tracking-widest text-gold-700 font-bold">Verifying Admin Security Token...</span>
       </div>
     );
   }
@@ -96,6 +96,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
     { name: 'Cakes', href: '/admin/cakes', icon: Cake },
     { name: 'Categories', href: '/admin/categories', icon: FolderTree },
     { name: 'WhatsApp Orders', href: '/admin/orders', icon: MessageCircle },
+    { name: 'Client Feedback', href: '/admin/feedback', icon: Star },
     { name: 'Media Library', href: '/admin/media', icon: ImageIcon },
     { name: 'Website Settings', href: '/admin/settings', icon: Settings },
   ];
@@ -164,8 +165,8 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
                 <ShieldCheck className="w-4 h-4 text-gold-600" />
               </div>
               <div className="overflow-hidden">
-                <p className="text-xs font-bold text-charcoal-900 truncate">{user?.name || 'Master Pastry Chef'}</p>
-                <p className="text-[10px] text-emerald-700 font-bold truncate">{user?.role || 'Super Admin'}</p>
+                <p className="text-xs font-bold text-charcoal-900 truncate">{user?.name || 'Tina Baidya'}</p>
+                <p className="text-[10px] text-emerald-700 font-bold truncate">{user?.role || 'Founder & Admin'}</p>
               </div>
             </div>
           )}
@@ -234,8 +235,8 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
               <div className="flex items-center space-x-3 p-2 bg-cream-50 rounded-xl">
                 <ShieldCheck className="w-4 h-4 text-gold-600" />
                 <div className="overflow-hidden text-xs">
-                  <p className="font-bold text-charcoal-900 truncate">{user?.name || 'Master Pastry Chef'}</p>
-                  <p className="text-[10px] text-emerald-700 font-bold truncate">{user?.role || 'Super Admin'}</p>
+                  <p className="font-bold text-charcoal-900 truncate">{user?.name || 'Tina Baidya'}</p>
+                  <p className="text-[10px] text-emerald-700 font-bold truncate">{user?.role || 'Founder & Admin'}</p>
                 </div>
               </div>
               <button
@@ -304,7 +305,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
 
       {/* MOBILE STICKY BOTTOM NAVIGATION BAR */}
       <div className="lg:hidden fixed bottom-0 left-0 right-0 z-30 bg-white/95 backdrop-blur-md border-t border-warmgray-300 px-2 py-1.5 flex justify-around items-center shadow-lg">
-        {navItems.slice(0, 4).map((item) => {
+        {navItems.slice(0, 5).map((item) => {
           const isActive = pathname === item.href;
           const Icon = item.icon;
           return (
