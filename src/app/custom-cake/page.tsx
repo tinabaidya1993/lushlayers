@@ -579,7 +579,7 @@ export default function CustomCakePage() {
             <div className="bg-white text-charcoal-900 rounded-3xl p-5 sm:p-7 border border-warmgray-300 shadow-luxury flex flex-col sm:flex-row justify-between items-center gap-4">
               <div>
                 <p className="text-[10px] uppercase tracking-wider text-warmgray-500 font-bold">Total Estimated Price</p>
-                <p className="font-serif text-3xl font-bold text-gold-700">₹{estimatedPrice.toLocaleString()}</p>
+                <p className="font-serif text-3xl font-bold text-gold-700">₹{(estimatedPrice || 0).toLocaleString()}</p>
               </div>
 
               <a

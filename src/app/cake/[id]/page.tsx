@@ -262,7 +262,7 @@ export default function CakeDetailPage() {
                   </div>
                   <div className="text-right">
                     <span className="font-serif text-3xl font-bold text-gold-700 transition-all animate-fade-in">
-                      ₹{livePrice.toLocaleString()}
+                      ₹{(livePrice || 0).toLocaleString()}
                     </span>
                   </div>
                 </div>
@@ -438,7 +438,7 @@ export default function CakeDetailPage() {
                   className="w-full py-4 rounded-2xl bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs uppercase tracking-widest flex items-center justify-center space-x-2 transition-all shadow-md active:scale-95"
                 >
                   <MessageCircle className="w-4.5 h-4.5" />
-                  <span>Book Order on WhatsApp (₹{livePrice.toLocaleString()})</span>
+                  <span>Book Order on WhatsApp (₹{(livePrice || 0).toLocaleString()})</span>
                 </button>
                 <p className="text-[10px] text-center text-warmgray-400 font-medium">
                   Direct WhatsApp consultation. No cart, no online payment, zero hassle.
@@ -486,7 +486,7 @@ export default function CakeDetailPage() {
       <div className="lg:hidden fixed bottom-0 left-0 right-0 z-40 bg-white/95 backdrop-blur-md border-t border-warmgray-300 p-4 flex justify-between items-center shadow-2xl">
         <div>
           <p className="text-[10px] uppercase tracking-wider text-warmgray-500 font-bold">Estimated Price</p>
-          <p className="font-serif text-xl font-bold text-gold-700">₹{livePrice.toLocaleString()}</p>
+          <p className="font-serif text-xl font-bold text-gold-700">₹{(livePrice || 0).toLocaleString()}</p>
         </div>
         <button
           onClick={() => setOrderModalOpen(true)}
@@ -540,7 +540,7 @@ export default function CakeDetailPage() {
 
       {/* ONE-PAGE ORDER FORM MODAL */}
       <OrderFormModal
-        cake={cake}
+        cake={orderModalOpen ? cake : null}
         selectedWeightLabel={currentWeightLabel}
         selectedPrice={livePrice}
         selectedFlavor={`${selectedSponge} with ${selectedFilling}`}

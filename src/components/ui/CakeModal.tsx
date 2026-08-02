@@ -148,7 +148,7 @@ export default function CakeModal({ cake, onClose, onOpenOrderForm }: CakeModalP
                     Select Size / Weight
                   </span>
                   <span className="font-serif text-2xl font-bold text-gold-700">
-                    ₹{currentPrice.toLocaleString()}
+                    ₹{(currentPrice || 0).toLocaleString()}
                   </span>
                 </div>
 
@@ -219,7 +219,7 @@ export default function CakeModal({ cake, onClose, onOpenOrderForm }: CakeModalP
                 className="w-full py-3.5 px-5 rounded-2xl bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs uppercase tracking-widest flex items-center justify-center space-x-2 transition-all shadow-sm active:scale-95 cursor-pointer"
               >
                 <MessageCircle className="w-4.5 h-4.5 animate-pulse" />
-                <span>Book Order on WhatsApp (₹{currentPrice.toLocaleString()})</span>
+                <span>Book Order on WhatsApp (₹{(currentPrice || 0).toLocaleString()})</span>
               </button>
               <p className="text-[10px] text-center text-warmgray-400 font-medium">
                 Generates formatted WhatsApp order query. No online payment required.

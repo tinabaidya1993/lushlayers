@@ -6,16 +6,17 @@ export const BOUTIQUE_WHATSAPP_NUMBER = '918768388868'; // Exact User Phone Numb
  * Builds a WhatsApp URL for directly ordering a specific catalog cake
  */
 export function buildCakeInquiryWhatsAppUrl(cake: CakeItem, customNotes?: string, selectedWeight?: string, selectedPrice?: number): string {
+  const priceVal = selectedPrice || cake?.priceStartingFrom || 0;
   const text = `Hello *Lush Layers* (Made With Love) 👋✨
 
 I would like to place an inquiry for your signature cake:
 
 🎂 *Cake:* ${cake.name}
 ✨ *Category:* ${cake.category.toUpperCase()}
-💰 *Price:* ₹${(selectedPrice || cake.priceStartingFrom).toLocaleString()}
+💰 *Price:* ₹${priceVal.toLocaleString()}
 👥 *Servings/Weight:* ${selectedWeight || cake.servings}
 🍰 *Dietary:* ${cake.eggless ? '🌱 100% Eggless' : '🥚 Contains Egg'}
-🍫 *Flavors:* ${cake.flavors.join(', ')}
+🍫 *Flavors:* ${cake.flavors ? cake.flavors.join(', ') : 'Signature'}
 
 ${customNotes ? `📝 *Notes/Date Preference:* ${customNotes}\n` : ''}
 Could you please share availability and confirm details for this order?
@@ -29,6 +30,7 @@ Thank you! ❤️`;
  * Builds a WhatsApp URL for a complete One-Page Order Form submission
  */
 export function buildOnePageOrderWhatsAppUrl(order: OrderFormDetails): string {
+  const priceVal = order.selectedPrice || 0;
   const text = `✨ *LUSH LAYERS (MADE WITH LOVE) — CONFIRMED ORDER* ✨
 
 👤 *Customer Name:* ${order.customerName}
@@ -37,9 +39,9 @@ export function buildOnePageOrderWhatsAppUrl(order: OrderFormDetails): string {
 📅 *Event Date:* ${order.deliveryDate}
 ⏰ *Delivery Time Slot:* ${order.deliveryTime}
 
-🎂 *Cake Name:* ${order.cakeName} (${order.cakeCategory.toUpperCase()})
+🎂 *Cake Name:* ${order.cakeName} (${(order.cakeCategory || '').toUpperCase()})
 ⚖️ *Weight / Size:* ${order.selectedWeight}
-💰 *Total Estimated Price:* ₹${order.selectedPrice.toLocaleString()}
+💰 *Total Estimated Price:* ₹${priceVal.toLocaleString()}
 🌱 *Dietary:* ${order.eggless ? '100% Eggless' : 'Contains Egg'}
 
 🍫 *Selected Flavor:* ${order.selectedFlavor}

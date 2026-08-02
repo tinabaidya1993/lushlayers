@@ -12,14 +12,18 @@ import { Sparkles, Flame, ArrowRight, Star } from 'lucide-react';
 export default function FeaturedSection() {
   const [selectedQuickViewCake, setSelectedQuickViewCake] = useState<CakeItem | null>(null);
   const [selectedOrderCake, setSelectedOrderCake] = useState<CakeItem | null>(null);
+  const [selectedOrderWeight, setSelectedOrderWeight] = useState<string>('');
+  const [selectedOrderPrice, setSelectedOrderPrice] = useState<number>(0);
 
   // Filter 3 distinct collections for homepage
   const featuredCakes = CAKES_DATA.filter((c) => c.featured || c.bestseller).slice(0, 4);
   const bestsellerCakes = CAKES_DATA.filter((c) => c.bestseller).slice(0, 4);
   const newArrivalCakes = CAKES_DATA.filter((c) => c.newArrival || !c.bestseller).slice(0, 4);
 
-  const handleOrderNow = (cake: CakeItem) => {
+  const handleOrderNow = (cake: CakeItem, weightLabel?: string, price?: number) => {
     setSelectedOrderCake(cake);
+    setSelectedOrderWeight(weightLabel || (cake.weightOptions && cake.weightOptions[0] ? cake.weightOptions[0].label : cake.servings));
+    setSelectedOrderPrice(price || cake.priceStartingFrom);
   };
 
   return (
@@ -159,13 +163,15 @@ export default function FeaturedSection() {
         onClose={() => setSelectedQuickViewCake(null)}
         onOpenOrderForm={(cake, weightLabel, price) => {
           setSelectedQuickViewCake(null);
-          setSelectedOrderCake(cake);
+          handleOrderNow(cake, weightLabel, price);
         }}
       />
 
       {/* ORDER BOOKING MODAL */}
       <OrderFormModal
         cake={selectedOrderCake}
+        selectedWeightLabel={selectedOrderWeight}
+        selectedPrice={selectedOrderPrice}
         onClose={() => setSelectedOrderCake(null)}
       />
 

@@ -71,7 +71,7 @@ export default function SignatureCollection() {
                   </p>
 
                   <div className="pt-2 flex justify-between items-center border-t border-warmgray-100">
-                    <span className="font-serif text-xs sm:text-base font-bold text-gold-700">₹{cake.priceStartingFrom.toLocaleString()}</span>
+                    <span className="font-serif text-xs sm:text-base font-bold text-gold-700">₹{(cake.priceStartingFrom || 0).toLocaleString()}</span>
 
                     <div className="flex items-center space-x-1.5">
                       <button

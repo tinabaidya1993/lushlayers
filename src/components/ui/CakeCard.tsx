@@ -84,8 +84,8 @@ export default function CakeCard({ cake, onQuickView, onOrderNow }: CakeCardProp
 
           {/* Servings & Starting Price info */}
           <div className="flex justify-between items-center pt-2 mt-2 border-t border-warmgray-100 text-[10px] sm:text-xs">
-            <span className="text-warmgray-500 font-medium truncate max-w-[50%]">{cake.servings.split('(')[0]}</span>
-            <span className="font-serif text-xs sm:text-sm font-bold text-gold-700 flex-shrink-0">From ₹{cake.priceStartingFrom.toLocaleString()}</span>
+            <span className="text-warmgray-500 font-medium truncate max-w-[50%]">{(cake.servings || '').split('(')[0]}</span>
+            <span className="font-serif text-xs sm:text-sm font-bold text-gold-700 flex-shrink-0">From ₹{(cake.priceStartingFrom || 0).toLocaleString()}</span>
           </div>
         </div>
       </div>
