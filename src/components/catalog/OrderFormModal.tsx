@@ -2,11 +2,10 @@
 
 import React, { useState, useEffect } from 'react';
 import Image from 'next/image';
-import { X, Sparkles, MessageCircle, CheckCircle2, Upload, Check } from 'lucide-react';
+import { X, Sparkles, MessageCircle, CheckCircle2 } from 'lucide-react';
 import { CakeItem, OrderFormDetails } from '@/types';
 import { buildOnePageOrderWhatsAppUrl } from '@/lib/whatsapp';
 import { useScrollLock } from '@/hooks/useScrollLock';
-import { optimizeImageClientSide } from '@/lib/imageOptimizer';
 
 interface OrderFormModalProps {
   cake: CakeItem | null;
@@ -51,10 +50,6 @@ export default function OrderFormModal({
   const [cakeMessage, setCakeMessage] = useState('');
   const [specialNotes, setSpecialNotes] = useState('');
 
-  // Image Upload
-  const [referenceImageUrl, setReferenceImageUrl] = useState('');
-  const [uploadingImage, setUploadingImage] = useState(false);
-
   // Flow & State
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [orderSuccess, setOrderSuccess] = useState<{ orderId: string; whatsappUrl: string } | null>(null);
@@ -78,44 +73,30 @@ export default function OrderFormModal({
   // Form Validation
   const isValid = customerName.trim().length >= 2 && phoneNumber.trim().length >= 8 && deliveryAddress.trim().length >= 5;
 
-  const handleReferenceUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    if (!e.target.files || !e.target.files[0]) return;
-    const rawFile = e.target.files[0];
-
-    try {
-      setUploadingImage(true);
-      
-      // Auto-compress and resize image client-side before upload
-      const optRes = await optimizeImageClientSide(rawFile);
-      const formData = new FormData();
-      formData.append('file', optRes.file);
-
-      const res = await fetch('/api/upload', {
-        method: 'POST',
-        body: formData,
-      });
-      const data = await res.json();
-
-      if (data.success && data.images?.[0]) {
-        setReferenceImageUrl(data.images[0].secure_url || data.images[0].url);
-      }
-    } catch (err) {
-      alert('Failed to upload reference image');
-    } finally {
-      setUploadingImage(false);
-    }
-  };
-
-  // Celebration Add-on Accessories State
+  // Celebration Add-on Accessories — fetched live from Admin Settings
   const [selectedAccessories, setSelectedAccessories] = useState<{ id: string; name: string; price: number }[]>([]);
+  const [celebrationAccessoriesList, setCelebrationAccessoriesList] = useState<
+    { id: string; name: string; emoji: string; price: number }[]
+  >([
+    { id: 'candles', name: 'Birthday Candles Pack', emoji: '🎂', price: 50 },
+    { id: 'knife', name: 'Premium Cake Knife / Server', emoji: '🔪', price: 40 },
+    { id: 'balloons', name: 'Party Balloons (Pack of 5)', emoji: '🎈', price: 100 },
+    { id: 'sparklers', name: 'Golden Party Sparklers (Pack of 2)', emoji: '💖', price: 80 },
+    { id: 'crown', name: 'Birthday Crown / Sash', emoji: '👑', price: 120 },
+  ]);
 
-  const celebrationAccessoriesList = [
-    { id: 'candles', name: '🎂 Birthday Candles Pack', price: 50 },
-    { id: 'knife', name: '🔪 Premium Cake Knife / Server', price: 40 },
-    { id: 'balloons', name: '🎈 Party Balloons (Pack of 5)', price: 100 },
-    { id: 'sparklers', name: '💖 Golden Party Sparklers (Pack of 2)', price: 80 },
-    { id: 'crown', name: '👑 Birthday Crown / Sash', price: 120 },
-  ];
+  // Fetch live accessories from admin settings
+  useEffect(() => {
+    fetch('/api/settings')
+      .then((res) => res.json())
+      .then((data) => {
+        if (data.success && data.settings?.accessories?.length > 0) {
+          const active = data.settings.accessories.filter((a: any) => a.active !== false);
+          if (active.length > 0) setCelebrationAccessoriesList(active);
+        }
+      })
+      .catch(() => {}); // silent fallback to defaults
+  }, []);
 
   const toggleAccessory = (acc: { id: string; name: string; price: number }) => {
     setSelectedAccessories((prev) =>
@@ -153,8 +134,7 @@ export default function OrderFormModal({
       selectedThemeColor: themeColor,
       cakeMessage: cakeMessage || 'None',
       selectedAccessories,
-      referenceFileName: referenceImageUrl ? 'Attached via Cloudinary' : '',
-      specialNotes: referenceImageUrl ? `${specialNotes} (Reference: ${referenceImageUrl})` : specialNotes,
+      specialNotes: specialNotes || 'None',
       eggless: cake.eggless,
     };
 
@@ -185,7 +165,6 @@ export default function OrderFormModal({
           creamType,
           themeColor,
           cakeMessage,
-          referenceImageUrl,
           specialNotes,
         },
       };
@@ -461,7 +440,7 @@ export default function OrderFormModal({
                               onChange={() => {}}
                               className="accent-gold-600 rounded"
                             />
-                            <span>{acc.name}</span>
+                            <span>{(acc as any).emoji && <span className="mr-1">{(acc as any).emoji}</span>}{acc.name}</span>
                           </div>
                           <span className="font-bold text-gold-700">+₹{acc.price}</span>
                         </label>
