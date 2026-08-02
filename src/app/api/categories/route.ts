@@ -2,11 +2,6 @@ import { NextRequest, NextResponse } from 'next/server';
 import { revalidatePath } from 'next/cache';
 import { connectToDatabase } from '@/lib/db';
 import Category from '@/models/Category';
-import SiteSettings from '@/models/SiteSettings';
-import { CATEGORIES } from '@/data/cakes';
-
-export const dynamic = 'force-dynamic';
-export const revalidate = 0;
 
 export async function GET(req: NextRequest) {
   try {
@@ -15,28 +10,17 @@ export async function GET(req: NextRequest) {
       return NextResponse.json({ success: true, count: 0, categories: [] });
     }
 
-    let categories = await Category.find({}).sort({ createdAt: 1 });
-
-    if (!categories || categories.length < CATEGORIES.length) {
-      try {
-        for (const cat of CATEGORIES) {
-          await Category.findOneAndUpdate({ id: cat.id }, cat, { upsert: true });
-        }
-        categories = await Category.find({}).sort({ createdAt: 1 });
-      } catch (e) {
-        categories = CATEGORIES as any;
-      }
-    }
+    const categories = await Category.find({}).sort({ createdAt: 1 }).lean();
 
     return NextResponse.json(
       {
         success: true,
         count: categories.length,
-        categories: categories && categories.length > 0 ? categories : CATEGORIES,
+        categories: categories || [],
       },
       {
         headers: {
-          'Cache-Control': 'no-store, no-cache, must-revalidate, proxy-revalidate',
+          'Cache-Control': 'public, max-age=60, s-maxage=3600, stale-while-revalidate=86400',
         },
       }
     );
@@ -44,13 +28,12 @@ export async function GET(req: NextRequest) {
     return NextResponse.json(
       {
         success: true,
-        count: CATEGORIES.length,
-        categories: CATEGORIES,
-        source: 'static_fallback',
+        count: 0,
+        categories: [],
       },
       {
         headers: {
-          'Cache-Control': 'no-store, no-cache, must-revalidate, proxy-revalidate',
+          'Cache-Control': 'no-store',
         },
       }
     );
@@ -66,13 +49,19 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'Category name is required' }, { status: 400 });
     }
 
-    const id = body.id || body.name.toLowerCase().replace(/[^a-z0-9]/g, '-');
-    const newCategory = await Category.create({ ...body, id });
+    const id = body.id || body.name.toLowerCase().trim().replace(/[^a-z0-9]/g, '-');
+    const group = body.group || 'Celebration Cakes';
+
+    const newCategory = await Category.create({
+      id,
+      name: body.name.trim(),
+      group: group.trim(),
+    });
 
     try {
-      revalidatePath('/');
-      revalidatePath('/catalog');
-      revalidatePath('/admin/categories');
+      revalidatePath('/', 'page');
+      revalidatePath('/catalog', 'page');
+      revalidatePath('/admin/categories', 'page');
     } catch (e) {}
 
     return NextResponse.json({
@@ -80,7 +69,7 @@ export async function POST(req: NextRequest) {
       category: newCategory,
     });
   } catch (error: any) {
-    return NextResponse.json({ error: error.message || 'Failed to save category to MongoDB' }, { status: 500 });
+    return NextResponse.json({ error: error.message || 'Failed to save category' }, { status: 500 });
   }
 }
 
@@ -89,19 +78,27 @@ export async function PUT(req: NextRequest) {
     await connectToDatabase();
     const body = await req.json();
 
-    if (!body.id) {
-      return NextResponse.json({ error: 'Category ID is required' }, { status: 400 });
+    if (!body.name) {
+      return NextResponse.json({ error: 'Category name is required' }, { status: 400 });
     }
 
-    const updatedCategory = await Category.findOneAndUpdate({ id: body.id }, body, {
-      new: true,
-      upsert: true,
-    });
+    const id = body.id || body.name.toLowerCase().trim().replace(/[^a-z0-9]/g, '-');
+    const group = body.group || 'Celebration Cakes';
+
+    const updatedCategory = await Category.findOneAndUpdate(
+      { $or: [{ id }, { name: body.name }] },
+      {
+        id,
+        name: body.name.trim(),
+        group: group.trim(),
+      },
+      { new: true, upsert: true }
+    );
 
     try {
-      revalidatePath('/');
-      revalidatePath('/catalog');
-      revalidatePath('/admin/categories');
+      revalidatePath('/', 'page');
+      revalidatePath('/catalog', 'page');
+      revalidatePath('/admin/categories', 'page');
     } catch (e) {}
 
     return NextResponse.json({
@@ -134,15 +131,15 @@ export async function DELETE(req: NextRequest) {
     const result = await Category.deleteOne(filter);
 
     try {
-      revalidatePath('/');
-      revalidatePath('/catalog');
-      revalidatePath('/admin/categories');
+      revalidatePath('/', 'page');
+      revalidatePath('/catalog', 'page');
+      revalidatePath('/admin/categories', 'page');
     } catch (e) {}
 
     return NextResponse.json({
       success: true,
       deletedCount: result.deletedCount,
-      message: `Category ${id} deleted from MongoDB`,
+      message: `Category ${id} deleted permanently`,
     });
   } catch (error: any) {
     return NextResponse.json({ error: error.message || 'Failed to delete category' }, { status: 500 });

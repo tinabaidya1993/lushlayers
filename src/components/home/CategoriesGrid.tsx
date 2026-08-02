@@ -2,7 +2,6 @@
 
 import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
-import { CATEGORIES } from '@/data/cakes';
 import { CategoryInfo, CakeItem } from '@/types';
 import {
   Sparkles,
@@ -21,7 +20,7 @@ import {
   PieChart,
   ChevronRight,
   ArrowUpRight,
-  ShoppingBag
+  FolderOpen
 } from 'lucide-react';
 
 const CATEGORY_ICONS: Record<string, React.ReactNode> = {
@@ -42,7 +41,7 @@ const CATEGORY_ICONS: Record<string, React.ReactNode> = {
 };
 
 export default function CategoriesGrid() {
-  const [categories, setCategories] = useState<CategoryInfo[]>(CATEGORIES);
+  const [categories, setCategories] = useState<CategoryInfo[]>([]);
   const [cakes, setCakes] = useState<CakeItem[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
 
@@ -54,39 +53,33 @@ export default function CategoriesGrid() {
       try {
         setLoading(true);
         const [catRes, cakesRes] = await Promise.all([
-          fetch('/api/categories', { cache: 'no-store' }),
-          fetch('/api/cakes', { cache: 'no-store' }),
+          fetch('/api/categories'),
+          fetch('/api/cakes'),
         ]);
 
         const catData = await catRes.json();
         const cakesData = await cakesRes.json();
 
-        if (catData.success && Array.isArray(catData.categories) && catData.categories.length > 0) {
+        if (catData.success && Array.isArray(catData.categories)) {
           setCategories(catData.categories);
+        } else {
+          setCategories([]);
         }
+
         if (cakesData.success && Array.isArray(cakesData.cakes)) {
           setCakes(cakesData.cakes);
+        } else {
+          setCakes([]);
         }
       } catch (err) {
+        setCategories([]);
+        setCakes([]);
       } finally {
         setLoading(false);
       }
     }
     loadData();
   }, []);
-
-  // Compute live cake count per category ID
-  const cakeCounts: Record<string, number> = {};
-  cakes.forEach((cake) => {
-    const catId = cake.category;
-    cakeCounts[catId] = (cakeCounts[catId] || 0) + 1;
-  });
-
-  // HIDE EMPTY CATEGORIES IF CAKES EXIST IN DB
-  const hasAnyCakesInDb = cakes.length > 0;
-  const visibleCategories = hasAnyCakesInDb
-    ? categories.filter((cat) => (cakeCounts[cat.id] || 0) > 0)
-    : categories;
 
   const toggleGroup = (groupName: string) => {
     setExpandedGroups((prev) => ({
@@ -95,11 +88,30 @@ export default function CategoriesGrid() {
     }));
   };
 
-  const groups = [
-    { title: 'Celebration Cakes', icon: '🎂' },
-    { title: 'Special Occasion Cakes', icon: '🎉' },
-    { title: 'Signature Collection', icon: '🍰' },
-  ];
+  // Compute live cake count per category ID
+  const cakeCounts: Record<string, number> = {};
+  cakes.forEach((cake) => {
+    const catId = cake.category;
+    if (catId) {
+      cakeCounts[catId] = (cakeCounts[catId] || 0) + 1;
+    }
+  });
+
+  // HIDE EMPTY CATEGORIES IF CAKES EXIST IN DB
+  const hasAnyCakesInDb = cakes.length > 0;
+  const visibleCategories = hasAnyCakesInDb
+    ? categories.filter((cat) => (cakeCounts[cat.id] || 0) > 0)
+    : categories;
+
+  // Group categories dynamically by Parent Group
+  const groupsMap: Record<string, CategoryInfo[]> = {};
+  visibleCategories.forEach((cat) => {
+    const groupName = cat.group || 'Celebration Cakes';
+    if (!groupsMap[groupName]) {
+      groupsMap[groupName] = [];
+    }
+    groupsMap[groupName].push(cat);
+  });
 
   return (
     <section id="categories" className="scroll-mt-16 py-8 sm:py-12 bg-cream-50 text-charcoal-900 relative border-t border-b border-warmgray-200/80">
@@ -115,110 +127,100 @@ export default function CategoriesGrid() {
           </div>
 
           <span className="text-[10px] text-gold-800 font-bold uppercase tracking-widest bg-gold-50 px-2.5 py-0.5 rounded-full border border-gold-300/80">
-            {visibleCategories.length} Categories
+            {visibleCategories.length} {visibleCategories.length === 1 ? 'Category' : 'Categories'}
           </span>
         </div>
 
         {/* ULTRA-THIN COLLAPSED BY DEFAULT DROPDOWN LIST WITH SMOOTH ANIMATIONS */}
-        <div className="space-y-2.5">
-          {groups.map((grp) => {
-            const groupCats = visibleCategories.filter(
-              (c) => (c.group || 'Celebration Cakes') === grp.title
-            );
+        {loading ? (
+          <div className="py-8 text-center text-xs text-warmgray-500 font-medium">
+            Loading categories...
+          </div>
+        ) : visibleCategories.length === 0 ? (
+          <div className="p-8 text-center bg-white rounded-2xl border border-warmgray-200 space-y-2">
+            <FolderOpen className="w-8 h-8 text-warmgray-400 mx-auto" />
+            <p className="text-xs text-warmgray-600 font-bold">No active categories found</p>
+            <p className="text-[11px] text-warmgray-500">
+              Add your first cake category from the Admin Panel.
+            </p>
+          </div>
+        ) : (
+          <div className="space-y-2.5">
+            {Object.keys(groupsMap).map((groupTitle) => {
+              const groupCats = groupsMap[groupTitle];
+              const isExpanded = !!expandedGroups[groupTitle];
 
-            // Hide parent group if no child category has cakes inside it
-            if (hasAnyCakesInDb && groupCats.length === 0) {
-              return null;
-            }
-
-            const isExpanded = !!expandedGroups[grp.title];
-
-            return (
-              <div
-                key={grp.title}
-                className="bg-white rounded-xl border border-warmgray-200/90 shadow-2xs overflow-hidden transition-all duration-300 hover:border-gold-300"
-              >
-                {/* Ultra-Thin Parent Group Header */}
-                <button
-                  onClick={() => toggleGroup(grp.title)}
-                  className="w-full px-3.5 py-2.5 bg-gradient-to-r from-cream-50 via-white to-cream-50 hover:bg-gold-50/50 flex items-center justify-between transition-colors text-left group"
-                >
-                  <div className="flex items-center space-x-2.5 min-w-0">
-                    <span className="text-base">{grp.icon}</span>
-                    <h3 className="font-serif text-xs sm:text-sm font-bold text-charcoal-900 group-hover:text-gold-700 transition-colors truncate">
-                      {grp.title}
-                    </h3>
-                    <span className="px-2 py-0.2 rounded-full text-[9px] font-extrabold bg-cream-100 text-charcoal-800 border border-warmgray-200">
-                      {groupCats.length}
-                    </span>
-                  </div>
-
-                  <div className="flex items-center space-x-1.5 text-warmgray-400 group-hover:text-gold-600 transition-colors">
-                    <span className="text-[10px] font-bold uppercase tracking-wider text-warmgray-500 hidden sm:inline">
-                      {isExpanded ? 'Collapse' : 'Expand'}
-                    </span>
-                    <ChevronRight
-                      className={`w-3.5 h-3.5 transition-transform duration-300 ${
-                        isExpanded ? 'rotate-90 text-gold-600' : 'rotate-0'
-                      }`}
-                    />
-                  </div>
-                </button>
-
-                {/* Ultra-Thin Smooth Animated Child Category List */}
+              return (
                 <div
-                  className={`transition-all duration-300 ease-in-out overflow-hidden ${
-                    isExpanded ? 'max-h-[500px] opacity-100 border-t border-warmgray-100' : 'max-h-0 opacity-0'
-                  }`}
+                  key={groupTitle}
+                  className="bg-white rounded-xl border border-warmgray-200/90 shadow-2xs overflow-hidden transition-all duration-300 hover:border-gold-400"
                 >
-                  <div className="divide-y divide-warmgray-100 bg-white">
-                    {groupCats.map((cat) => {
-                      const count = cakeCounts[cat.id] || 0;
-                      const icon = CATEGORY_ICONS[cat.id] || <Cake className="w-3.5 h-3.5 text-gold-600" />;
+                  {/* Ultra-Thin Group Accordion Trigger */}
+                  <button
+                    onClick={() => toggleGroup(groupTitle)}
+                    className="w-full px-3.5 py-2.5 sm:py-3 flex items-center justify-between bg-gradient-to-r from-cream-100/90 via-white to-cream-50 hover:bg-cream-100 transition-colors cursor-pointer text-left"
+                    aria-expanded={isExpanded}
+                  >
+                    <div className="flex items-center space-x-2">
+                      <span className="w-1.5 h-1.5 rounded-full bg-gold-500"></span>
+                      <span className="font-serif text-xs sm:text-sm font-bold text-charcoal-900 tracking-tight">
+                        {groupTitle}
+                      </span>
+                      <span className="text-[10px] font-bold text-warmgray-500 bg-cream-200/80 px-2 py-0.2 rounded-full font-mono">
+                        {groupCats.length}
+                      </span>
+                    </div>
 
-                      return (
-                        <Link
-                          key={cat.id}
-                          href={`/catalog?category=${cat.id}`}
-                          className="px-3.5 py-1.5 hover:bg-gold-50/40 flex items-center justify-between transition-colors group cursor-pointer"
-                        >
-                          {/* Left: Icon + Thin Title */}
-                          <div className="flex items-center space-x-2.5 min-w-0">
-                            <div className="p-1 rounded bg-cream-100 group-hover:bg-white text-gold-600 transition-colors flex-shrink-0 border border-warmgray-100">
-                              {icon}
+                    <div className="flex items-center space-x-1.5 text-warmgray-500">
+                      <span className="text-[10px] uppercase tracking-widest font-bold text-gold-700 hidden sm:inline-block">
+                        {isExpanded ? 'Collapse' : 'Expand'}
+                      </span>
+                      <ChevronRight
+                        className={`w-3.5 h-3.5 text-gold-600 transition-transform duration-300 ${
+                          isExpanded ? 'rotate-90' : 'rotate-0'
+                        }`}
+                      />
+                    </div>
+                  </button>
+
+                  {/* Collapsed/Expanded Parent-Child Content */}
+                  {isExpanded && (
+                    <div className="border-t border-warmgray-200/60 divide-y divide-warmgray-100 bg-white animate-fade-in">
+                      {groupCats.map((cat) => {
+                        const count = cakeCounts[cat.id] || 0;
+                        const icon = CATEGORY_ICONS[cat.id] || <Cake className="w-3.5 h-3.5 text-gold-600" />;
+
+                        return (
+                          <Link
+                            key={cat.id}
+                            href={`/catalog?category=${cat.id}`}
+                            className="px-4 sm:px-5 py-2 flex items-center justify-between hover:bg-gold-50/50 transition-colors group"
+                          >
+                            <div className="flex items-center space-x-2.5 min-w-0">
+                              <div className="w-5 h-5 rounded bg-cream-100 group-hover:bg-gold-100 flex items-center justify-center flex-shrink-0 transition-colors">
+                                {icon}
+                              </div>
+                              <span className="font-sans text-xs font-bold text-charcoal-800 group-hover:text-gold-700 truncate transition-colors">
+                                {cat.name}
+                              </span>
                             </div>
-                            <span className="text-[11px] sm:text-xs font-semibold text-charcoal-800 group-hover:text-gold-700 transition-colors truncate">
-                              {cat.name}
-                            </span>
-                          </div>
 
-                          {/* Right: Micro Count Badge & Animated Icon */}
-                          <div className="flex items-center space-x-2 flex-shrink-0">
-                            <span className="text-[9px] font-bold uppercase px-2 py-0.2 rounded-full bg-cream-100 text-warmgray-700 border border-warmgray-200 group-hover:border-gold-300 group-hover:bg-gold-50 transition-colors">
-                              {count} Cake{count !== 1 ? 's' : ''}
-                            </span>
-                            <ArrowUpRight className="w-3 h-3 text-warmgray-400 group-hover:text-gold-600 group-hover:translate-x-0.5 group-hover:-translate-y-0.5 transition-transform" />
-                          </div>
-                        </Link>
-                      );
-                    })}
-                  </div>
+                            <div className="flex items-center space-x-1.5 flex-shrink-0 pl-2">
+                              {hasAnyCakesInDb && (
+                                <span className="text-[10px] font-bold text-warmgray-500 group-hover:text-gold-700 font-mono">
+                                  ({count} {count === 1 ? 'Cake' : 'Cakes'})
+                                </span>
+                              )}
+                              <ArrowUpRight className="w-3 h-3 text-warmgray-400 group-hover:text-gold-600 group-hover:translate-x-0.5 group-hover:-translate-y-0.5 transition-transform" />
+                            </div>
+                          </Link>
+                        );
+                      })}
+                    </div>
+                  )}
                 </div>
-              </div>
-            );
-          })}
-        </div>
-
-        {/* Failsafe Notice when NO cakes exist in any category yet */}
-        {!loading && hasAnyCakesInDb && visibleCategories.length === 0 && (
-          <div className="p-4 rounded-xl bg-white border border-warmgray-200 text-center space-y-1">
-            <ShoppingBag className="w-5 h-5 text-warmgray-400 mx-auto" />
-            <p className="text-xs font-bold text-charcoal-900">
-              No categories currently have active cakes.
-            </p>
-            <p className="text-[10px] text-warmgray-500">
-              Add cakes under categories in Admin Panel to automatically reveal them here.
-            </p>
+              );
+            })}
           </div>
         )}
 

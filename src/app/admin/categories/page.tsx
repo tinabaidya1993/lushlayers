@@ -1,19 +1,18 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import Image from 'next/image';
-import { Plus, Edit, Trash2, Layers, Sparkles, CheckCircle2, X, Upload, RefreshCw } from 'lucide-react';
-import { CATEGORIES } from '@/data/cakes';
+import { Plus, Edit, Trash2, Layers, Sparkles, CheckCircle2, X, RefreshCw, FolderPlus } from 'lucide-react';
 import { CategoryInfo } from '@/types';
 import { useScrollLock } from '@/hooks/useScrollLock';
-import { optimizeImageClientSide } from '@/lib/imageOptimizer';
+
+const DEFAULT_PARENT_GROUPS = ['Celebration Cakes', 'Special Occasion Cakes', 'Signature Collection'];
 
 export default function AdminCategoriesPage() {
   const [categories, setCategories] = useState<CategoryInfo[]>([]);
   const [loading, setLoading] = useState(true);
   const [editingCategory, setEditingCategory] = useState<Partial<CategoryInfo> | null>(null);
-  const [uploadingImage, setUploadingImage] = useState(false);
   const [saveStatus, setSaveStatus] = useState<string | null>(null);
+  const [customGroupInput, setCustomGroupInput] = useState('');
 
   useScrollLock(Boolean(editingCategory));
 
@@ -30,41 +29,47 @@ export default function AdminCategoriesPage() {
         setCategories(data.categories);
       }
     } catch (err) {
-      console.warn('MongoDB categories fetch error:', err);
+      console.warn('Categories fetch error:', err);
     } finally {
       setLoading(false);
     }
   };
 
   const handleCreateNew = () => {
+    setCustomGroupInput('');
     setEditingCategory({
       id: `category-${Date.now()}`,
       name: '',
-      tagline: 'Artisanal Collection',
-      description: 'Handcrafted luxury cakes designed for special occasions.',
-      heroImage: 'https://images.pexels.com/photos/1702373/pexels-photo-1702373.jpeg?auto=compress&cs=tinysrgb&w=1200',
-      badge: 'New Collection',
+      group: 'Celebration Cakes',
     });
   };
 
   const handleSave = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!editingCategory || !editingCategory.name) return;
+    if (!editingCategory || !editingCategory.name?.trim()) return;
+
+    const finalGroup = customGroupInput.trim() || editingCategory.group || 'Celebration Cakes';
+    const payload = {
+      id: editingCategory.id || `cat-${Date.now()}`,
+      name: editingCategory.name.trim(),
+      group: finalGroup,
+    };
 
     try {
       setSaveStatus('Saving category to MongoDB Atlas...');
       const res = await fetch('/api/categories', {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(editingCategory),
+        body: JSON.stringify(payload),
       });
 
       const data = await res.json();
 
       if (data.success && data.category) {
-        fetchLiveCategories();
+        await fetchLiveCategories();
         setEditingCategory(null);
-        setSaveStatus('Category saved live!');
+        setCustomGroupInput('');
+        setSaveStatus('Category saved permanently!');
       } else {
         alert(`Failed to save category: ${data.error || 'Unknown error'}`);
       }
@@ -75,84 +80,69 @@ export default function AdminCategoriesPage() {
     }
   };
 
-  const handleDelete = async (id: string) => {
-    if (!confirm('Are you sure you want to delete this category from MongoDB Atlas?')) return;
+  const handleDelete = async (id: string, name: string) => {
+    if (!confirm(`Are you sure you want to delete category "${name}" permanently?`)) return;
 
     try {
       setCategories((prev) => prev.filter((c) => c.id !== id && (c as any)._id !== id));
       const res = await fetch(`/api/categories?id=${encodeURIComponent(id)}`, { method: 'DELETE' });
       const data = await res.json();
       if (res.ok && data.success) {
-        fetchLiveCategories();
+        await fetchLiveCategories();
+        setSaveStatus(`Category "${name}" deleted!`);
       } else {
         alert(`Failed to delete category: ${data.error || 'Unknown error'}`);
-        fetchLiveCategories();
+        await fetchLiveCategories();
       }
     } catch (err) {
       alert('Failed to delete category');
-      fetchLiveCategories();
-    }
-  };
-
-  const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    if (!e.target.files || !e.target.files[0]) return;
-    const rawFile = e.target.files[0];
-
-    try {
-      setUploadingImage(true);
-      
-      // Auto-compress and resize image client-side before upload
-      const optRes = await optimizeImageClientSide(rawFile);
-      const formData = new FormData();
-      formData.append('file', optRes.file);
-
-      const res = await fetch('/api/upload', {
-        method: 'POST',
-        body: formData,
-      });
-
-      const data = await res.json();
-
-      if (res.ok && data.success && data.images?.[0]) {
-        const uploadedUrl = data.images[0].secure_url || data.images[0].url;
-        setEditingCategory((prev) => ({ ...prev, heroImage: uploadedUrl }));
-      }
-    } catch (err) {
-      alert('Cloudinary upload failed');
+      await fetchLiveCategories();
     } finally {
-      setUploadingImage(false);
+      setTimeout(() => setSaveStatus(null), 2500);
     }
   };
+
+  // Group categories dynamically by Parent Group
+  const groupsMap: { [key: string]: CategoryInfo[] } = {};
+  categories.forEach((cat) => {
+    const groupName = cat.group || 'Celebration Cakes';
+    if (!groupsMap[groupName]) groupsMap[groupName] = [];
+    groupsMap[groupName].push(cat);
+  });
+
+  const availableGroups = Array.from(
+    new Set([...DEFAULT_PARENT_GROUPS, ...Object.keys(groupsMap)])
+  );
 
   return (
     <div className="space-y-6 animate-fade-in max-w-5xl">
       
       {/* Header */}
-      <div className="flex justify-between items-center">
+      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 border-b border-warmgray-200 pb-4">
         <div>
           <div className="flex items-center space-x-2">
-            <h1 className="font-serif text-3xl font-bold text-charcoal-900">Category Management</h1>
+            <h1 className="font-serif text-2xl sm:text-3xl font-bold text-charcoal-900">Category Management</h1>
             <span className="px-2.5 py-0.5 rounded-full text-[10px] uppercase font-bold bg-emerald-100 text-emerald-800 flex items-center space-x-1">
               <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-ping"></span>
-              <span>MongoDB Live Sync</span>
+              <span>Live MongoDB Sync</span>
             </span>
           </div>
-          <p className="text-xs text-warmgray-500 font-medium">
-            Categories added or modified here reflect instantly across the entire website and filter bars.
+          <p className="text-xs text-warmgray-500 font-medium mt-1">
+            Simple Parent & Child category hierarchy. Add, edit, or delete categories. No auto-refresh resets!
           </p>
         </div>
 
         <div className="flex items-center space-x-2">
           <button
             onClick={fetchLiveCategories}
-            className="p-2.5 rounded-full border border-warmgray-300 hover:border-gold-500 text-charcoal-900"
-            title="Refresh"
+            className="p-2.5 rounded-xl border border-warmgray-300 hover:border-gold-500 text-charcoal-900 bg-white shadow-xs"
+            title="Refresh List"
           >
             <RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} />
           </button>
           <button
             onClick={handleCreateNew}
-            className="px-5 py-2.5 rounded-full bg-gold-500 hover:bg-gold-600 text-white font-bold text-xs uppercase tracking-wider shadow-sm flex items-center space-x-2 transition-all active:scale-95"
+            className="px-5 py-2.5 rounded-xl bg-gold-500 hover:bg-gold-600 text-white font-bold text-xs uppercase tracking-wider shadow-sm flex items-center space-x-2 transition-all active:scale-95 cursor-pointer"
           >
             <Plus className="w-4 h-4" />
             <span>Add Category</span>
@@ -161,20 +151,21 @@ export default function AdminCategoriesPage() {
       </div>
 
       {saveStatus && (
-        <div className="p-3.5 bg-emerald-50 border border-emerald-300 text-emerald-900 text-xs rounded-2xl font-bold flex items-center space-x-2">
-          <CheckCircle2 className="w-4 h-4 text-emerald-600" />
+        <div className="p-3.5 bg-emerald-50 border border-emerald-300 text-emerald-900 text-xs rounded-2xl font-bold flex items-center space-x-2 animate-fade-in">
+          <CheckCircle2 className="w-4 h-4 text-emerald-600 flex-shrink-0" />
           <span>{saveStatus}</span>
         </div>
       )}
 
-      {/* Edit/Create Category Modal */}
+      {/* Simplified Category Modal Form */}
       {editingCategory && (
         <div className="fixed inset-0 z-[1000] bg-charcoal-900/60 backdrop-blur-xs flex items-center justify-center p-4 overflow-y-auto">
-          <div className="bg-white w-full max-w-lg rounded-3xl p-6 sm:p-8 shadow-2xl border border-warmgray-200 space-y-4 my-8 text-xs text-charcoal-900 scroll-lock-overlay">
+          <div className="bg-white w-full max-w-md rounded-3xl p-6 sm:p-8 shadow-2xl border border-warmgray-200 space-y-4 text-xs text-charcoal-900 scroll-lock-overlay animate-fade-in">
             
             <div className="flex justify-between items-center border-b border-warmgray-200 pb-3">
-              <h3 className="font-serif text-xl font-bold text-charcoal-900">
-                {editingCategory.name ? `Edit: ${editingCategory.name}` : 'Add New Cake Category'}
+              <h3 className="font-serif text-lg font-bold text-charcoal-900 flex items-center space-x-2">
+                <FolderPlus className="w-5 h-5 text-gold-600" />
+                <span>{editingCategory.name ? `Edit: ${editingCategory.name}` : 'Add New Category'}</span>
               </h3>
               <button onClick={() => setEditingCategory(null)} className="p-1 text-warmgray-400 hover:text-charcoal-900">
                 <X className="w-5 h-5" />
@@ -183,83 +174,81 @@ export default function AdminCategoriesPage() {
 
             <form onSubmit={handleSave} className="space-y-4">
               
-              {/* Category Cover Image */}
+              {/* Category Name */}
               <div>
-                <label className="block font-bold uppercase tracking-wider text-warmgray-600 mb-1">Category Cover Image (Cloudinary)</label>
-                <div className="flex items-center space-x-3">
-                  <div className="relative w-16 h-16 rounded-xl overflow-hidden bg-cream-100 border border-warmgray-200 flex-shrink-0">
-                    <Image
-                      src={editingCategory.heroImage || 'https://images.unsplash.com/photo-1535141192574-5d4897c13136?auto=format&fit=crop&w=600&q=80'}
-                      alt="Category Cover"
-                      fill
-                      className="object-cover"
-                    />
-                  </div>
-                  <label className="px-4 py-2 rounded-xl border border-gold-500 text-gold-700 font-bold bg-gold-50/50 hover:bg-gold-500 hover:text-white transition-all cursor-pointer inline-flex items-center space-x-2">
-                    <Upload className="w-4 h-4" />
-                    <span>{uploadingImage ? 'Uploading...' : 'Upload Cover Image'}</span>
-                    <input type="file" accept="image/*" onChange={handleImageUpload} className="hidden" />
-                  </label>
-                </div>
-              </div>
-
-              <div>
-                <label className="block font-bold uppercase tracking-wider text-warmgray-600 mb-1">Category Name</label>
+                <label className="block font-bold uppercase tracking-wider text-warmgray-700 mb-1">
+                  Category Name <span className="text-red-500">*</span>
+                </label>
                 <input
                   type="text"
                   required
+                  placeholder="e.g. Birthday Cakes, Bento Cakes, Wedding Tiers"
                   value={editingCategory.name || ''}
                   onChange={(e) => setEditingCategory({ ...editingCategory, name: e.target.value })}
-                  className="w-full px-3.5 py-2 rounded-xl border border-warmgray-300 focus:outline-none focus:border-gold-500 font-bold"
+                  className="w-full px-3.5 py-2.5 rounded-xl border border-warmgray-300 focus:outline-none focus:border-gold-500 font-bold text-sm"
                 />
               </div>
 
+              {/* Parent Group Selection */}
               <div>
-                <label className="block font-bold uppercase tracking-wider text-warmgray-600 mb-1">Parent Group / Section</label>
+                <label className="block font-bold uppercase tracking-wider text-warmgray-700 mb-1">
+                  Parent Section / Group <span className="text-red-500">*</span>
+                </label>
                 <select
                   value={editingCategory.group || 'Celebration Cakes'}
-                  onChange={(e) => setEditingCategory({ ...editingCategory, group: e.target.value })}
-                  className="w-full px-3.5 py-2 rounded-xl border border-warmgray-300 focus:outline-none focus:border-gold-500 font-bold bg-white"
+                  onChange={(e) => {
+                    const val = e.target.value;
+                    if (val !== 'custom') {
+                      setEditingCategory({ ...editingCategory, group: val });
+                      setCustomGroupInput('');
+                    } else {
+                      setEditingCategory({ ...editingCategory, group: '' });
+                    }
+                  }}
+                  className="w-full px-3.5 py-2.5 rounded-xl border border-warmgray-300 focus:outline-none focus:border-gold-500 font-bold bg-white text-sm"
                 >
-                  <option value="Celebration Cakes">🎂 Celebration Cakes</option>
-                  <option value="Special Occasion Cakes">🎉 Special Occasion Cakes</option>
-                  <option value="Signature Collection">🍰 Signature Collection</option>
+                  {availableGroups.map((grp) => (
+                    <option key={grp} value={grp}>
+                      📂 {grp}
+                    </option>
+                  ))}
+                  <option value="custom">➕ Create New Custom Parent Group...</option>
                 </select>
               </div>
 
-              <div>
-                <label className="block font-bold uppercase tracking-wider text-warmgray-600 mb-1">Tagline</label>
-                <input
-                  type="text"
-                  value={editingCategory.tagline || ''}
-                  onChange={(e) => setEditingCategory({ ...editingCategory, tagline: e.target.value })}
-                  className="w-full px-3.5 py-2 rounded-xl border border-warmgray-300 focus:outline-none focus:border-gold-500"
-                />
-              </div>
+              {/* Custom Parent Group Input if selected */}
+              {(!editingCategory.group || !availableGroups.includes(editingCategory.group)) && (
+                <div className="pt-1">
+                  <label className="block font-bold uppercase tracking-wider text-warmgray-600 mb-1">
+                    New Parent Group Name
+                  </label>
+                  <input
+                    type="text"
+                    required
+                    placeholder="e.g. Festival Specials, Gourmet Dessert Tubs"
+                    value={customGroupInput || editingCategory.group || ''}
+                    onChange={(e) => {
+                      setCustomGroupInput(e.target.value);
+                      setEditingCategory({ ...editingCategory, group: e.target.value });
+                    }}
+                    className="w-full px-3.5 py-2.5 rounded-xl border border-gold-400 bg-gold-50/40 focus:outline-none focus:border-gold-500 font-bold text-sm"
+                  />
+                </div>
+              )}
 
-              <div>
-                <label className="block font-bold uppercase tracking-wider text-warmgray-600 mb-1">Description</label>
-                <textarea
-                  rows={2}
-                  value={editingCategory.description || ''}
-                  onChange={(e) => setEditingCategory({ ...editingCategory, description: e.target.value })}
-                  className="w-full px-3.5 py-2 rounded-xl border border-warmgray-300 focus:outline-none focus:border-gold-500"
-                />
-              </div>
-
-              <div className="flex justify-end space-x-2 pt-3 border-t border-warmgray-200">
+              <div className="flex justify-end space-x-2 pt-4 border-t border-warmgray-200">
                 <button
                   type="button"
                   onClick={() => setEditingCategory(null)}
-                  className="px-5 py-2.5 rounded-full border border-warmgray-300 font-bold"
+                  className="px-5 py-2.5 rounded-xl border border-warmgray-300 font-bold text-xs hover:bg-warmgray-50"
                 >
                   Cancel
                 </button>
                 <button
                   type="submit"
-                  className="px-6 py-2.5 rounded-full bg-gold-500 hover:bg-gold-600 text-white font-bold uppercase tracking-wider"
+                  className="px-6 py-2.5 rounded-xl bg-gold-500 hover:bg-gold-600 text-white font-bold text-xs uppercase tracking-wider shadow-sm cursor-pointer"
                 >
-                  Save Category Live
+                  Save Category
                 </button>
               </div>
 
@@ -268,80 +257,89 @@ export default function AdminCategoriesPage() {
         </div>
       )}
 
-      {/* Category Grid Cards */}
-      <div className="space-y-8">
-        {['Celebration Cakes', 'Special Occasion Cakes', 'Signature Collection'].map((groupName) => {
-          const groupCats = categories.filter((c) => (c.group || 'Celebration Cakes') === groupName);
-          if (groupCats.length === 0) return null;
-
-          return (
-            <div key={groupName} className="space-y-3">
-              <div className="flex items-center space-x-2 border-b border-warmgray-200 pb-2">
-                <h2 className="font-serif text-lg font-bold text-charcoal-900">
-                  {groupName === 'Celebration Cakes' ? '🎂 Celebration Cakes' : groupName === 'Special Occasion Cakes' ? '🎉 Special Occasion Cakes' : '🍰 Signature Collection'}
-                </h2>
-                <span className="px-2 py-0.5 rounded-full bg-cream-200 text-charcoal-800 text-[10px] font-bold">
-                  {groupCats.length} Categories
-                </span>
-              </div>
-
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-                {groupCats.map((cat) => (
-                  <div
-                    key={cat.id}
-                    className="bg-white rounded-2xl border border-warmgray-200 overflow-hidden shadow-sm hover:shadow-luxury-hover transition-all flex flex-col justify-between"
-                  >
-                    <div className="relative p-4 bg-gradient-to-r from-charcoal-900 via-charcoal-950 to-charcoal-900 text-white flex justify-between items-center">
-                      <div className="flex items-center space-x-2">
-                        <div className="w-8 h-8 rounded-xl bg-white/10 backdrop-blur-md flex items-center justify-center text-gold-400">
-                          <Sparkles className="w-4 h-4" />
-                        </div>
-                        <span className="text-[11px] font-bold text-gold-300 uppercase tracking-wider">{cat.group}</span>
-                      </div>
-                      <div className="flex space-x-1">
-                        <button
-                          onClick={() => setEditingCategory(cat)}
-                          className="p-1.5 rounded-lg bg-white/10 hover:bg-gold-500 text-white shadow-xs transition-colors"
-                          title="Edit Category"
-                        >
-                          <Edit className="w-3.5 h-3.5" />
-                        </button>
-                        <button
-                          onClick={() => handleDelete(cat.id)}
-                          className="p-1.5 rounded-lg bg-white/10 hover:bg-red-600 text-white shadow-xs transition-colors"
-                          title="Delete Category"
-                        >
-                          <Trash2 className="w-3.5 h-3.5" />
-                        </button>
-                      </div>
-                    </div>
-
-                    <div className="p-4 space-y-1.5">
-                      <div className="flex justify-between items-center">
-                        <h3 className="font-serif text-base font-bold text-charcoal-900">{cat.name}</h3>
-                        <span className="text-[10px] uppercase font-bold text-gold-700 bg-gold-50 px-2 py-0.5 rounded-full border border-gold-200">
-                          {cat.badge || 'Collection'}
-                        </span>
-                      </div>
-                      <p className="text-[11px] text-warmgray-500 italic">{cat.tagline}</p>
-                      <p className="text-xs text-warmgray-600 leading-relaxed pt-1">{cat.description}</p>
-                      {cat.subcategories && cat.subcategories.length > 0 && (
-                        <div className="flex flex-wrap gap-1 pt-1.5">
-                          {cat.subcategories.map((sub) => (
-                            <span key={sub} className="text-[9px] bg-warmgray-100 text-warmgray-700 px-2 py-0.5 rounded font-medium">
-                              {sub}
-                            </span>
-                          ))}
-                        </div>
-                      )}
-                    </div>
+      {/* Clean Category List Table View */}
+      {loading ? (
+        <div className="py-12 text-center space-y-2">
+          <RefreshCw className="w-6 h-6 text-gold-500 animate-spin mx-auto" />
+          <p className="text-xs text-warmgray-500 font-medium">Loading live categories from MongoDB Atlas...</p>
+        </div>
+      ) : categories.length === 0 ? (
+        <div className="p-12 text-center bg-white rounded-3xl border border-warmgray-200 space-y-3">
+          <Layers className="w-10 h-10 text-warmgray-400 mx-auto" />
+          <h3 className="font-serif text-lg font-bold text-charcoal-900">No Categories Found</h3>
+          <p className="text-xs text-warmgray-500 max-w-md mx-auto">
+            Your category list is currently empty. Click <strong>"Add Category"</strong> above to create your first cake category!
+          </p>
+          <button
+            onClick={handleCreateNew}
+            className="mt-2 px-5 py-2.5 rounded-xl bg-gold-500 text-white text-xs uppercase tracking-wider font-bold inline-flex items-center space-x-2 shadow-xs"
+          >
+            <Plus className="w-4 h-4" />
+            <span>Add First Category</span>
+          </button>
+        </div>
+      ) : (
+        <div className="space-y-6">
+          {Object.keys(groupsMap).map((parentGroup) => {
+            const childCats = groupsMap[parentGroup];
+            return (
+              <div key={parentGroup} className="bg-white rounded-2xl border border-warmgray-200 overflow-hidden shadow-xs">
+                
+                {/* Parent Group Header */}
+                <div className="px-5 py-3.5 bg-gradient-to-r from-cream-100 via-cream-50 to-white border-b border-warmgray-200 flex justify-between items-center">
+                  <div className="flex items-center space-x-2">
+                    <span className="w-2.5 h-2.5 rounded-full bg-gold-500"></span>
+                    <h2 className="font-serif text-base font-bold text-charcoal-900">{parentGroup}</h2>
                   </div>
-                ))}
+                  <span className="px-2.5 py-0.5 rounded-full bg-cream-200 text-charcoal-800 text-[11px] font-bold">
+                    {childCats.length} Categories
+                  </span>
+                </div>
+
+                {/* Child Category Simple Table */}
+                <div className="divide-y divide-warmgray-100">
+                  {childCats.map((cat, idx) => (
+                    <div
+                      key={cat.id}
+                      className="px-5 py-3.5 flex items-center justify-between hover:bg-cream-50/60 transition-colors"
+                    >
+                      <div className="flex items-center space-x-3">
+                        <span className="text-xs font-mono font-bold text-warmgray-400 w-5">{idx + 1}.</span>
+                        <div>
+                          <h3 className="font-sans text-sm font-bold text-charcoal-900">{cat.name}</h3>
+                          <span className="text-[10px] text-warmgray-500 font-mono">ID: {cat.id}</span>
+                        </div>
+                      </div>
+
+                      <div className="flex items-center space-x-2">
+                        <button
+                          onClick={() => {
+                            setCustomGroupInput('');
+                            setEditingCategory(cat);
+                          }}
+                          className="px-3 py-1.5 rounded-lg border border-warmgray-300 hover:border-gold-500 hover:bg-gold-50 text-charcoal-900 text-xs font-bold inline-flex items-center space-x-1 transition-all"
+                        >
+                          <Edit className="w-3.5 h-3.5 text-gold-600" />
+                          <span>Edit</span>
+                        </button>
+
+                        <button
+                          onClick={() => handleDelete(cat.id, cat.name)}
+                          className="px-3 py-1.5 rounded-lg border border-red-200 hover:border-red-500 hover:bg-red-50 text-red-700 text-xs font-bold inline-flex items-center space-x-1 transition-all"
+                        >
+                          <Trash2 className="w-3.5 h-3.5 text-red-600" />
+                          <span>Delete</span>
+                        </button>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+
               </div>
-            </div>
-          );
-        })}
-      </div>
+            );
+          })}
+        </div>
+      )}
 
     </div>
   );
