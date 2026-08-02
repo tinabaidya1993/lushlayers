@@ -1,11 +1,127 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import Image from 'next/image';
 import Link from 'next/link';
 import { CATEGORIES } from '@/data/cakes';
 import { CategoryInfo } from '@/types';
-import { ArrowUpRight, Sparkles, Cake, PartyPopper, HeartHandshake, Tag } from 'lucide-react';
+import {
+  Cake,
+  Heart,
+  Crown,
+  Baby,
+  Utensils,
+  Gem,
+  Flame,
+  Sparkles,
+  Gift,
+  PartyPopper,
+  Trophy,
+  MessageSquareHeart,
+  Cookie,
+  PieChart,
+  ArrowUpRight,
+} from 'lucide-react';
+
+interface CategoryStyle {
+  icon: React.ReactNode;
+  bgGradient: string;
+  glowColor: string;
+  borderColor: string;
+}
+
+const DEFAULT_STYLE: CategoryStyle = {
+  icon: <Cake className="w-9 h-9 text-gold-400 group-hover:scale-110 transition-transform duration-500" />,
+  bgGradient: 'from-amber-950 via-charcoal-900 to-charcoal-950',
+  glowColor: 'bg-gold-500/20',
+  borderColor: 'border-gold-500/30 hover:border-gold-400',
+};
+
+const CATEGORY_STYLES: Record<string, CategoryStyle> = {
+  'birthday-cakes': {
+    icon: <Cake className="w-9 h-9 text-gold-400 group-hover:scale-110 group-hover:rotate-6 transition-transform duration-500" />,
+    bgGradient: 'from-amber-950 via-charcoal-900 to-charcoal-950',
+    glowColor: 'bg-gold-500/20',
+    borderColor: 'border-gold-500/30 hover:border-gold-400',
+  },
+  'anniversary-cakes': {
+    icon: <Heart className="w-9 h-9 text-rose-400 group-hover:scale-110 transition-transform duration-500 animate-pulse" />,
+    bgGradient: 'from-rose-950 via-charcoal-900 to-charcoal-950',
+    glowColor: 'bg-rose-500/20',
+    borderColor: 'border-rose-500/30 hover:border-rose-400',
+  },
+  'wedding-cakes': {
+    icon: <Crown className="w-9 h-9 text-amber-300 group-hover:scale-110 group-hover:-rotate-6 transition-transform duration-500" />,
+    bgGradient: 'from-yellow-950 via-charcoal-900 to-charcoal-950',
+    glowColor: 'bg-amber-400/20',
+    borderColor: 'border-amber-400/30 hover:border-amber-300',
+  },
+  'baby-shower-cakes': {
+    icon: <Baby className="w-9 h-9 text-sky-300 group-hover:scale-110 transition-transform duration-500" />,
+    bgGradient: 'from-sky-950 via-charcoal-900 to-charcoal-950',
+    glowColor: 'bg-sky-500/20',
+    borderColor: 'border-sky-400/30 hover:border-sky-300',
+  },
+  'annaprashan-cakes': {
+    icon: <Utensils className="w-9 h-9 text-amber-400 group-hover:scale-110 transition-transform duration-500" />,
+    bgGradient: 'from-amber-900/80 via-charcoal-900 to-charcoal-950',
+    glowColor: 'bg-amber-500/20',
+    borderColor: 'border-amber-500/30 hover:border-amber-400',
+  },
+  'engagement-cakes': {
+    icon: <Gem className="w-9 h-9 text-emerald-300 group-hover:scale-110 group-hover:rotate-12 transition-transform duration-500" />,
+    bgGradient: 'from-emerald-950 via-charcoal-900 to-charcoal-950',
+    glowColor: 'bg-emerald-500/20',
+    borderColor: 'border-emerald-400/30 hover:border-emerald-300',
+  },
+  'bhai-dooj-cakes': {
+    icon: <Flame className="w-9 h-9 text-orange-400 group-hover:scale-110 transition-transform duration-500" />,
+    bgGradient: 'from-orange-950 via-charcoal-900 to-charcoal-950',
+    glowColor: 'bg-orange-500/20',
+    borderColor: 'border-orange-500/30 hover:border-orange-400',
+  },
+  'valentines-couple-cakes': {
+    icon: <Sparkles className="w-9 h-9 text-rose-300 group-hover:scale-110 transition-transform duration-500" />,
+    bgGradient: 'from-red-950 via-charcoal-900 to-charcoal-950',
+    glowColor: 'bg-red-500/20',
+    borderColor: 'border-red-400/30 hover:border-red-300',
+  },
+  'rakhi-special-cakes': {
+    icon: <Gift className="w-9 h-9 text-purple-300 group-hover:scale-110 transition-transform duration-500" />,
+    bgGradient: 'from-purple-950 via-charcoal-900 to-charcoal-950',
+    glowColor: 'bg-purple-500/20',
+    borderColor: 'border-purple-400/30 hover:border-purple-300',
+  },
+  'any-day-celebration-cakes': {
+    icon: <PartyPopper className="w-9 h-9 text-yellow-300 group-hover:scale-110 group-hover:rotate-12 transition-transform duration-500" />,
+    bgGradient: 'from-yellow-950 via-charcoal-900 to-charcoal-950',
+    glowColor: 'bg-yellow-500/20',
+    borderColor: 'border-yellow-400/30 hover:border-yellow-300',
+  },
+  'farewell-success-cakes': {
+    icon: <Trophy className="w-9 h-9 text-gold-300 group-hover:scale-110 transition-transform duration-500" />,
+    bgGradient: 'from-slate-950 via-charcoal-900 to-charcoal-950',
+    glowColor: 'bg-gold-500/20',
+    borderColor: 'border-gold-500/30 hover:border-gold-300',
+  },
+  'bento-message-cakes': {
+    icon: <MessageSquareHeart className="w-9 h-9 text-pink-300 group-hover:scale-110 transition-transform duration-500" />,
+    bgGradient: 'from-pink-950 via-charcoal-900 to-charcoal-950',
+    glowColor: 'bg-pink-500/20',
+    borderColor: 'border-pink-400/30 hover:border-pink-300',
+  },
+  'premium-tub-cakes': {
+    icon: <Cookie className="w-9 h-9 text-amber-400 group-hover:scale-110 transition-transform duration-500" />,
+    bgGradient: 'from-amber-950 via-charcoal-900 to-charcoal-950',
+    glowColor: 'bg-amber-500/20',
+    borderColor: 'border-amber-500/30 hover:border-amber-400',
+  },
+  'pastries': {
+    icon: <PieChart className="w-9 h-9 text-amber-300 group-hover:scale-110 transition-transform duration-500" />,
+    bgGradient: 'from-amber-900/60 via-charcoal-900 to-charcoal-950',
+    glowColor: 'bg-amber-400/20',
+    borderColor: 'border-amber-400/30 hover:border-amber-300',
+  },
+};
 
 export default function CategoriesGrid() {
   const [categories, setCategories] = useState<CategoryInfo[]>(CATEGORIES);
@@ -64,58 +180,64 @@ export default function CategoriesGrid() {
           </div>
         </div>
 
-        {/* Categories Grid */}
+        {/* Categories Grid (Pure Dynamic Logo Icons & Luxury Cards) */}
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
-          {filteredCategories.map((cat) => (
-            <Link
-              key={cat.id}
-              href={`/catalog?category=${cat.id}`}
-              className="group relative rounded-3xl overflow-hidden bg-white border border-warmgray-200 shadow-sm hover:shadow-luxury-hover transition-all duration-300 flex flex-col justify-between min-h-[260px] p-6 transform-gpu hover:-translate-y-1"
-            >
-              <Image
-                src={cat.heroImage}
-                alt={cat.name}
-                fill
-                sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"
-                className="object-cover group-hover:scale-105 transition-transform duration-700"
-              />
-              <div className="absolute inset-0 bg-gradient-to-t from-charcoal-950/90 via-charcoal-900/40 to-transparent"></div>
+          {filteredCategories.map((cat) => {
+            const style = CATEGORY_STYLES[cat.id] || DEFAULT_STYLE;
 
-              {/* Badge */}
-              <div className="relative z-10 flex justify-between items-start">
-                <span className="px-3 py-1 rounded-full text-[10px] uppercase font-extrabold tracking-wider bg-white/90 backdrop-blur-md text-charcoal-900 border border-white/50 shadow-xs">
-                  {cat.badge || cat.group || 'Collection'}
-                </span>
-                <div className="w-8 h-8 rounded-full bg-white/20 backdrop-blur-md flex items-center justify-center text-white group-hover:bg-gold-500 group-hover:text-white transition-all">
-                  <ArrowUpRight className="w-4 h-4" />
-                </div>
-              </div>
+            return (
+              <Link
+                key={cat.id}
+                href={`/catalog?category=${cat.id}`}
+                className={`group relative rounded-3xl overflow-hidden bg-gradient-to-br ${style.bgGradient} border ${style.borderColor} shadow-lg hover:shadow-2xl transition-all duration-500 flex flex-col justify-between min-h-[240px] p-6 transform-gpu hover:-translate-y-1`}
+              >
+                {/* Glowing Backdrop Blob */}
+                <div className={`absolute top-0 right-0 w-32 h-32 rounded-full blur-3xl ${style.glowColor} group-hover:scale-150 transition-transform duration-700 pointer-events-none`}></div>
 
-              {/* Content */}
-              <div className="relative z-10 space-y-1.5">
-                <span className="text-[11px] text-gold-400 font-bold uppercase tracking-wider block">
-                  {cat.group || 'Cake Category'}
-                </span>
-                <h3 className="font-serif text-lg sm:text-xl text-white font-bold group-hover:text-gold-300 transition-colors line-clamp-1">
-                  {cat.name}
-                </h3>
-                <p className="text-xs text-warmgray-200 line-clamp-2 font-normal">
-                  {cat.tagline || cat.description}
-                </p>
-
-                {/* Subcategories preview tags */}
-                {cat.subcategories && cat.subcategories.length > 0 && (
-                  <div className="flex flex-wrap gap-1 pt-1">
-                    {cat.subcategories.map((sub) => (
-                      <span key={sub} className="text-[9px] font-medium bg-black/40 text-warmgray-200 px-2 py-0.5 rounded-md backdrop-blur-xs border border-white/10">
-                        {sub}
-                      </span>
-                    ))}
+                {/* Top Bar: Dynamic Logo Icon & Arrow */}
+                <div className="relative z-10 flex justify-between items-start">
+                  <div className="p-3 rounded-2xl bg-white/10 backdrop-blur-md border border-white/15 shadow-inner group-hover:bg-white/20 transition-all duration-300">
+                    {style.icon}
                   </div>
-                )}
-              </div>
-            </Link>
-          ))}
+
+                  <div className="flex items-center space-x-2">
+                    <span className="px-3 py-1 rounded-full text-[10px] uppercase font-extrabold tracking-wider bg-gold-500/20 backdrop-blur-md text-gold-300 border border-gold-400/30">
+                      {cat.badge || cat.group || 'Collection'}
+                    </span>
+                    <div className="w-8 h-8 rounded-full bg-white/10 backdrop-blur-md flex items-center justify-center text-white/80 group-hover:bg-gold-500 group-hover:text-white transition-all">
+                      <ArrowUpRight className="w-4 h-4" />
+                    </div>
+                  </div>
+                </div>
+
+                {/* Content Details & Description */}
+                <div className="relative z-10 space-y-2 pt-4">
+                  <span className="text-[11px] text-gold-400 font-bold uppercase tracking-wider block">
+                    {cat.group || 'Cake Category'}
+                  </span>
+                  
+                  <h3 className="font-serif text-lg sm:text-xl text-white font-bold group-hover:text-gold-300 transition-colors line-clamp-1">
+                    {cat.name}
+                  </h3>
+
+                  <p className="text-xs text-warmgray-300 font-normal leading-relaxed line-clamp-2">
+                    {cat.description || cat.tagline}
+                  </p>
+
+                  {/* Subcategories tags */}
+                  {cat.subcategories && cat.subcategories.length > 0 && (
+                    <div className="flex flex-wrap gap-1.5 pt-1">
+                      {cat.subcategories.map((sub) => (
+                        <span key={sub} className="text-[9px] font-semibold bg-white/10 text-gold-200 px-2.5 py-0.5 rounded-full border border-white/10 backdrop-blur-xs">
+                          {sub}
+                        </span>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              </Link>
+            );
+          })}
         </div>
 
       </div>

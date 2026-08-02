@@ -291,19 +291,24 @@ export default function AdminCategoriesPage() {
                     key={cat.id}
                     className="bg-white rounded-2xl border border-warmgray-200 overflow-hidden shadow-sm hover:shadow-luxury-hover transition-all flex flex-col justify-between"
                   >
-                    <div className="relative aspect-[16/9] bg-cream-100">
-                      <Image src={cat.heroImage} alt={cat.name} fill className="object-cover" />
-                      <div className="absolute top-2 right-2 flex space-x-1">
+                    <div className="relative p-4 bg-gradient-to-r from-charcoal-900 via-charcoal-950 to-charcoal-900 text-white flex justify-between items-center">
+                      <div className="flex items-center space-x-2">
+                        <div className="w-8 h-8 rounded-xl bg-white/10 backdrop-blur-md flex items-center justify-center text-gold-400">
+                          <Sparkles className="w-4 h-4" />
+                        </div>
+                        <span className="text-[11px] font-bold text-gold-300 uppercase tracking-wider">{cat.group}</span>
+                      </div>
+                      <div className="flex space-x-1">
                         <button
                           onClick={() => setEditingCategory(cat)}
-                          className="p-2 rounded-full bg-white/90 text-charcoal-900 hover:bg-gold-500 hover:text-white shadow-sm transition-colors"
+                          className="p-1.5 rounded-lg bg-white/10 hover:bg-gold-500 text-white shadow-xs transition-colors"
                           title="Edit Category"
                         >
                           <Edit className="w-3.5 h-3.5" />
                         </button>
                         <button
                           onClick={() => handleDelete(cat.id)}
-                          className="p-2 rounded-full bg-white/90 text-red-600 hover:bg-red-600 hover:text-white shadow-sm transition-colors"
+                          className="p-1.5 rounded-lg bg-white/10 hover:bg-red-600 text-white shadow-xs transition-colors"
                           title="Delete Category"
                         >
                           <Trash2 className="w-3.5 h-3.5" />
@@ -311,7 +316,7 @@ export default function AdminCategoriesPage() {
                       </div>
                     </div>
 
-                    <div className="p-4 space-y-1">
+                    <div className="p-4 space-y-1.5">
                       <div className="flex justify-between items-center">
                         <h3 className="font-serif text-base font-bold text-charcoal-900">{cat.name}</h3>
                         <span className="text-[10px] uppercase font-bold text-gold-700 bg-gold-50 px-2 py-0.5 rounded-full border border-gold-200">
@@ -319,7 +324,7 @@ export default function AdminCategoriesPage() {
                         </span>
                       </div>
                       <p className="text-[11px] text-warmgray-500 italic">{cat.tagline}</p>
-                      <p className="text-xs text-warmgray-600 line-clamp-2 pt-1">{cat.description}</p>
+                      <p className="text-xs text-warmgray-600 leading-relaxed pt-1">{cat.description}</p>
                       {cat.subcategories && cat.subcategories.length > 0 && (
                         <div className="flex flex-wrap gap-1 pt-1.5">
                           {cat.subcategories.map((sub) => (
