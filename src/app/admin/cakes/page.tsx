@@ -65,7 +65,7 @@ export default function AdminCakesPage() {
   useScrollLock(Boolean(editingCake) || Boolean(editingSlide));
 
   // Weight & Base Price Calculation States
-  const [baseHalfPoundPrice, setBaseHalfPoundPrice] = useState<number>(350);
+  const [baseHalfPoundPrice, setBaseHalfPoundPrice] = useState<number | string>(350);
   const [selectedWeightLbs, setSelectedWeightLbs] = useState<number[]>([0.5, 1.0, 1.5, 2.0, 2.5, 3.0]);
 
   useEffect(() => {
@@ -118,22 +118,26 @@ export default function AdminCakesPage() {
     }
   };
 
-  const handleBasePriceChange = (newBasePrice: number) => {
-    setBaseHalfPoundPrice(newBasePrice);
+  const handleBasePriceChange = (valStr: string) => {
+    const numVal = valStr === '' ? '' : Number(valStr);
+    setBaseHalfPoundPrice(numVal as any);
+
     if (!editingCake) return;
+
+    const numericBase = valStr === '' || isNaN(Number(valStr)) ? 0 : Number(valStr);
 
     const updatedOptions = selectedWeightLbs.map((lb) => {
       const opt = POUND_OPTIONS.find((p) => p.lb === lb) || POUND_OPTIONS[0];
       return {
         label: opt.label,
         weightKg: Math.round(opt.lb * 0.453592 * 10) / 10,
-        price: Math.round(newBasePrice * opt.multiplier),
+        price: Math.round(numericBase * opt.multiplier),
       };
     });
 
     setEditingCake({
       ...editingCake,
-      priceStartingFrom: newBasePrice,
+      priceStartingFrom: numericBase,
       weightOptions: updatedOptions,
     });
   };
@@ -153,7 +157,7 @@ export default function AdminCakesPage() {
       return {
         label: opt.label,
         weightKg: Math.round(opt.lb * 0.453592 * 10) / 10,
-        price: Math.round(baseHalfPoundPrice * opt.multiplier),
+        price: Math.round((Number(baseHalfPoundPrice) || 0) * opt.multiplier),
       };
     });
 
@@ -820,10 +824,15 @@ export default function AdminCakesPage() {
                   <label className="block font-bold text-warmgray-800 mb-1">0.5 Pound (Half Pound) Base Price (₹) *</label>
                   <input
                     type="number"
-                    value={baseHalfPoundPrice}
-                    onChange={(e) => handleBasePriceChange(Number(e.target.value))}
+                    value={baseHalfPoundPrice === '' || baseHalfPoundPrice === undefined || baseHalfPoundPrice === null ? '' : baseHalfPoundPrice}
+                    onChange={(e) => handleBasePriceChange(e.target.value)}
+                    onBlur={() => {
+                      if (baseHalfPoundPrice === '' || isNaN(Number(baseHalfPoundPrice))) {
+                        handleBasePriceChange('0');
+                      }
+                    }}
                     className="w-full px-3.5 py-2 rounded-xl border border-gold-400 bg-white font-serif text-lg font-bold text-gold-800 focus:outline-none"
-                    placeholder="350"
+                    placeholder="0"
                   />
                 </div>
 
@@ -833,7 +842,7 @@ export default function AdminCakesPage() {
                   <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
                     {POUND_OPTIONS.map((opt) => {
                       const isChecked = selectedWeightLbs.includes(opt.lb);
-                      const calcPrice = Math.round(baseHalfPoundPrice * opt.multiplier);
+                      const calcPrice = Math.round((Number(baseHalfPoundPrice) || 0) * opt.multiplier);
                       return (
                         <label
                           key={opt.lb}
@@ -1002,9 +1011,15 @@ export default function AdminCakesPage() {
                   <label className="block font-bold text-warmgray-700 mb-1">Starting Price (₹) *</label>
                   <input
                     type="number"
-                    value={editingSlide.priceStartingFrom || 1800}
-                    onChange={(e) => setEditingSlide({ ...editingSlide, priceStartingFrom: Number(e.target.value) })}
+                    value={(editingSlide.priceStartingFrom as any) === '' || editingSlide.priceStartingFrom === undefined || editingSlide.priceStartingFrom === null ? '' : editingSlide.priceStartingFrom}
+                    onChange={(e) => setEditingSlide({ ...editingSlide, priceStartingFrom: e.target.value === '' ? ('' as any) : Number(e.target.value) })}
+                    onBlur={() => {
+                      if ((editingSlide.priceStartingFrom as any) === '' || isNaN(Number(editingSlide.priceStartingFrom))) {
+                        setEditingSlide({ ...editingSlide, priceStartingFrom: 0 });
+                      }
+                    }}
                     className="w-full px-3 py-2 rounded-xl border border-warmgray-300 font-bold text-gold-700"
+                    placeholder="0"
                   />
                 </div>
               </div>
