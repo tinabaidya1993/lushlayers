@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { revalidatePath } from 'next/cache';
 import { connectToDatabase } from '@/lib/db';
 import Cake from '@/models/Cake';
 import { CAKES_DATA } from '@/data/cakes';
@@ -44,6 +45,15 @@ export async function POST(req: NextRequest) {
 
     const newCake = await Cake.create(body);
 
+    // On-Demand ISR Revalidation
+    try {
+      revalidatePath('/');
+      revalidatePath('/catalog');
+      revalidatePath(`/cake/${body.id}`);
+    } catch (e) {
+      // safe fallback
+    }
+
     return NextResponse.json({
       success: true,
       cake: newCake,
@@ -68,6 +78,15 @@ export async function PUT(req: NextRequest) {
       upsert: true,
     });
 
+    // On-Demand ISR Revalidation
+    try {
+      revalidatePath('/');
+      revalidatePath('/catalog');
+      revalidatePath(`/cake/${body.id}`);
+    } catch (e) {
+      // safe fallback
+    }
+
     return NextResponse.json({
       success: true,
       cake: updatedCake,
@@ -89,6 +108,15 @@ export async function DELETE(req: NextRequest) {
     }
 
     await Cake.deleteOne({ id });
+
+    // On-Demand ISR Revalidation
+    try {
+      revalidatePath('/');
+      revalidatePath('/catalog');
+      revalidatePath(`/cake/${id}`);
+    } catch (e) {
+      // safe fallback
+    }
 
     return NextResponse.json({
       success: true,
