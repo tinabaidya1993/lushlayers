@@ -106,8 +106,8 @@ export default function Hero() {
             
             <div className="inline-flex items-center space-x-2 px-3.5 py-1 rounded-full bg-white border border-gold-400 text-gold-700 shadow-sm">
               <Sparkles className="w-3.5 h-3.5 text-gold-600" />
-              <span className="text-[10px] uppercase tracking-[0.2em] font-bold">
-                {activeSlide.badgeTagline || 'Lush Layers • Made With Love'}
+              <span className="text-[10px] uppercase tracking-[0.2em] font-bold" suppressHydrationWarning>
+                {activeSlide?.badgeTagline || DEFAULT_HERO_SLIDES[0].badgeTagline}
               </span>
             </div>
 
@@ -116,8 +116,8 @@ export default function Hero() {
               <span className="italic text-gold-700 font-serif">Artisanal Cakes</span>
             </h1>
 
-            <p className="text-xs sm:text-sm text-warmgray-600 font-normal leading-relaxed max-w-md text-center lg:text-left">
-              {activeSlide.description || 'Handcrafted wedding tiers, celebration cakes & 100% eggless luxury desserts. Ordered directly via WhatsApp.'}
+            <p className="text-xs sm:text-sm text-warmgray-600 font-normal leading-relaxed max-w-md text-center lg:text-left" suppressHydrationWarning>
+              {activeSlide?.description || DEFAULT_HERO_SLIDES[0].description}
             </p>
 
             <div className="pt-1 flex flex-wrap gap-3 items-center justify-center lg:justify-start">
@@ -157,8 +157,8 @@ export default function Hero() {
                 className="relative aspect-[16/10] sm:aspect-[4/3] rounded-2xl overflow-hidden shadow-luxury border border-warmgray-200 bg-white group transform-gpu cursor-grab active:cursor-grabbing select-none"
               >
                 <Image
-                  src={activeSlide.image}
-                  alt={activeSlide.cakeName}
+                  src={activeSlide?.image || DEFAULT_HERO_SLIDES[0].image}
+                  alt={activeSlide?.cakeName || DEFAULT_HERO_SLIDES[0].cakeName}
                   fill
                   priority
                   sizes="(max-width: 768px) 100vw, 50vw"
@@ -168,16 +168,16 @@ export default function Hero() {
                 {/* Floating Info Overlay Bar */}
                 <div className="absolute bottom-2.5 left-2.5 right-2.5 bg-white/95 backdrop-blur-md p-3 rounded-xl border border-warmgray-200 shadow-sm flex justify-between items-center text-xs pointer-events-auto">
                   <div>
-                    <span className="text-[9px] uppercase tracking-wider font-bold text-gold-700 block">
-                      {activeSlide.category || 'Featured'} ({currentIdx + 1}/{slides.length})
+                    <span className="text-[9px] uppercase tracking-wider font-bold text-gold-700 block" suppressHydrationWarning>
+                      {activeSlide?.category || DEFAULT_HERO_SLIDES[0].category} ({currentIdx + 1}/{slides.length})
                     </span>
-                    <h3 className="font-serif text-sm font-bold text-charcoal-900 truncate max-w-[180px] sm:max-w-[240px]">
-                      {activeSlide.cakeName}
+                    <h3 className="font-serif text-sm font-bold text-charcoal-900 truncate max-w-[180px] sm:max-w-[240px]" suppressHydrationWarning>
+                      {activeSlide?.cakeName || DEFAULT_HERO_SLIDES[0].cakeName}
                     </h3>
                   </div>
                   <div className="text-right">
-                    <span className="font-serif text-sm font-bold text-gold-700 block">
-                      From ₹{(activeSlide.priceStartingFrom || 0).toLocaleString()}
+                    <span className="font-serif text-sm font-bold text-gold-700 block" suppressHydrationWarning>
+                      From ₹{(activeSlide?.priceStartingFrom || DEFAULT_HERO_SLIDES[0].priceStartingFrom).toLocaleString()}
                     </span>
                     <Link
                       href={activeSlide.ctaLink || '/catalog'}
