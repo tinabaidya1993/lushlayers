@@ -1,26 +1,99 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
-import { Sparkles, MessageCircle, ArrowRight, ChevronLeft, ChevronRight } from 'lucide-react';
+import { Sparkles, MessageCircle, ArrowRight } from 'lucide-react';
 import { buildGeneralInquiryWhatsAppUrl } from '@/lib/whatsapp';
-import { CAKES_DATA } from '@/data/cakes';
+import { DEFAULT_HERO_SLIDES, HeroSlideData } from '@/data/heroSlides';
 
 export default function Hero() {
   const whatsappUrl = buildGeneralInquiryWhatsAppUrl();
-  const heroCakes = CAKES_DATA.filter((c) => c.featured || c.bestseller).slice(0, 4);
-  const [currentIdx, setCurrentIdx] = useState(0);
+  const [slides, setSlides] = useState<HeroSlideData[]>(DEFAULT_HERO_SLIDES);
+  const [currentIdx, setCurrentIdx] = useState<number>(0);
+  const [isPaused, setIsPaused] = useState<boolean>(false);
 
-  // Auto carousel rotation
+  // Touch Swipe & Mouse Drag States
+  const [touchStartX, setTouchStartX] = useState<number | null>(null);
+  const [touchEndX, setTouchEndX] = useState<number | null>(null);
+  const [isDragging, setIsDragging] = useState<boolean>(false);
+  const pauseTimerRef = useRef<NodeJS.Timeout | null>(null);
+
+  // Fetch Live Hero Slides from MongoDB Atlas / API
   useEffect(() => {
-    const timer = setInterval(() => {
-      setCurrentIdx((prev) => (prev + 1) % heroCakes.length);
-    }, 4500);
-    return () => clearInterval(timer);
-  }, [heroCakes.length]);
+    fetchHeroSlides();
+  }, []);
 
-  const activeCake = heroCakes[currentIdx] || heroCakes[0];
+  const fetchHeroSlides = async () => {
+    try {
+      const res = await fetch('/api/hero-slides');
+      const data = await res.json();
+      if (data.success && data.slides && data.slides.length > 0) {
+        const activeOnly = data.slides.filter((s: any) => s.active !== false);
+        setSlides(activeOnly.length > 0 ? activeOnly : DEFAULT_HERO_SLIDES);
+      }
+    } catch (err) {
+      console.warn('Hero slides fetch error, using default fallback slides');
+    }
+  };
+
+  // Smart Auto-Slide with Interaction Pause & Resume
+  useEffect(() => {
+    if (isPaused || slides.length <= 1) return;
+
+    const timer = setInterval(() => {
+      setCurrentIdx((prev) => (prev + 1) % slides.length);
+    }, 4000);
+
+    return () => clearInterval(timer);
+  }, [isPaused, slides.length]);
+
+  // Pause Auto-Slide temporarily on manual user swipe / interaction (Resumes after 6 seconds of idle)
+  const triggerManualInteractionPause = () => {
+    setIsPaused(true);
+    if (pauseTimerRef.current) clearTimeout(pauseTimerRef.current);
+    pauseTimerRef.current = setTimeout(() => {
+      setIsPaused(false);
+    }, 6000);
+  };
+
+  // Touch & Drag Swipe Handlers (Min distance 50px)
+  const minSwipeDistance = 50;
+
+  const handleTouchStart = (e: React.TouchEvent | React.MouseEvent) => {
+    triggerManualInteractionPause();
+    const clientX = 'touches' in e ? e.touches[0].clientX : (e as React.MouseEvent).clientX;
+    setTouchStartX(clientX);
+    setTouchEndX(clientX);
+    setIsDragging(true);
+  };
+
+  const handleTouchMove = (e: React.TouchEvent | React.MouseEvent) => {
+    if (!isDragging || touchStartX === null) return;
+    const clientX = 'touches' in e ? e.touches[0].clientX : (e as React.MouseEvent).clientX;
+    setTouchEndX(clientX);
+  };
+
+  const handleTouchEnd = () => {
+    if (!isDragging || touchStartX === null || touchEndX === null) return;
+    const distance = touchStartX - touchEndX;
+
+    if (Math.abs(distance) > minSwipeDistance) {
+      if (distance > 0) {
+        // Swiped Left -> Next Slide
+        setCurrentIdx((prev) => (prev + 1) % slides.length);
+      } else {
+        // Swiped Right -> Previous Slide
+        setCurrentIdx((prev) => (prev === 0 ? slides.length - 1 : prev - 1));
+      }
+    }
+
+    setTouchStartX(null);
+    setTouchEndX(null);
+    setIsDragging(false);
+  };
+
+  const activeSlide = slides[currentIdx] || slides[0];
 
   return (
     <section className="relative bg-gradient-to-b from-cream-100 via-white to-cream-50 text-charcoal-900 pt-20 pb-6 sm:pt-24 sm:pb-8 overflow-hidden border-b border-warmgray-200/60">
@@ -28,13 +101,13 @@ export default function Hero() {
       <div className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 w-full">
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 lg:gap-8 items-center">
           
-          {/* Main Compact Hero Copy (Centered on Tablet & Mobile, Left-aligned on Desktop) */}
+          {/* Main Hero Copy (Left Column) */}
           <div className="lg:col-span-6 space-y-3.5 text-center lg:text-left flex flex-col items-center lg:items-start">
             
             <div className="inline-flex items-center space-x-2 px-3.5 py-1 rounded-full bg-white border border-gold-400 text-gold-700 shadow-sm">
               <Sparkles className="w-3.5 h-3.5 text-gold-600" />
               <span className="text-[10px] uppercase tracking-[0.2em] font-bold">
-                Lush Layers • Made With Love
+                {activeSlide.badgeTagline || 'Lush Layers • Made With Love'}
               </span>
             </div>
 
@@ -44,7 +117,7 @@ export default function Hero() {
             </h1>
 
             <p className="text-xs sm:text-sm text-warmgray-600 font-normal leading-relaxed max-w-md text-center lg:text-left">
-              Handcrafted wedding tiers, celebration cakes & 100% eggless luxury desserts. Ordered directly via WhatsApp.
+              {activeSlide.description || 'Handcrafted wedding tiers, celebration cakes & 100% eggless luxury desserts. Ordered directly via WhatsApp.'}
             </p>
 
             <div className="pt-1 flex flex-wrap gap-3 items-center justify-center lg:justify-start">
@@ -69,65 +142,71 @@ export default function Hero() {
 
           </div>
 
-          {/* DYNAMIC FEATURED HERO CAKE CAROUSEL CARD */}
+          {/* DYNAMIC SWIPE HERO CAKE CAROUSEL CARD (NO ARROWS, USER SWIPEABLE) */}
           <div className="lg:col-span-6 relative mt-2 lg:mt-0">
             <div className="relative mx-auto max-w-sm sm:max-w-md lg:max-w-none">
               
-              <div className="relative aspect-[16/10] sm:aspect-[4/3] rounded-2xl overflow-hidden shadow-luxury border border-warmgray-200 bg-white group transform-gpu">
+              <div
+                onTouchStart={handleTouchStart}
+                onTouchMove={handleTouchMove}
+                onTouchEnd={handleTouchEnd}
+                onMouseDown={handleTouchStart}
+                onMouseMove={handleTouchMove}
+                onMouseUp={handleTouchEnd}
+                onMouseLeave={handleTouchEnd}
+                className="relative aspect-[16/10] sm:aspect-[4/3] rounded-2xl overflow-hidden shadow-luxury border border-warmgray-200 bg-white group transform-gpu cursor-grab active:cursor-grabbing select-none"
+              >
                 <Image
-                  src={activeCake.image}
-                  alt={activeCake.name}
+                  src={activeSlide.image}
+                  alt={activeSlide.cakeName}
                   fill
                   priority
                   sizes="(max-width: 768px) 100vw, 50vw"
-                  className="object-cover transition-transform duration-700"
+                  className="object-cover transition-transform duration-700 pointer-events-none"
                 />
                 
                 {/* Floating Info Overlay Bar */}
-                <div className="absolute bottom-2.5 left-2.5 right-2.5 bg-white/95 backdrop-blur-md p-3 rounded-xl border border-warmgray-200 shadow-sm flex justify-between items-center text-xs">
+                <div className="absolute bottom-2.5 left-2.5 right-2.5 bg-white/95 backdrop-blur-md p-3 rounded-xl border border-warmgray-200 shadow-sm flex justify-between items-center text-xs pointer-events-auto">
                   <div>
                     <span className="text-[9px] uppercase tracking-wider font-bold text-gold-700 block">
-                      Featured ({currentIdx + 1}/{heroCakes.length})
+                      {activeSlide.category || 'Featured'} ({currentIdx + 1}/{slides.length})
                     </span>
                     <h3 className="font-serif text-sm font-bold text-charcoal-900 truncate max-w-[180px] sm:max-w-[240px]">
-                      {activeCake.name}
+                      {activeSlide.cakeName}
                     </h3>
                   </div>
                   <div className="text-right">
-                    <span className="font-serif text-sm font-bold text-gold-700 block">From ₹{activeCake.priceStartingFrom.toLocaleString()}</span>
-                    <Link href={`/cake/${activeCake.id}`} className="text-[10px] font-bold text-charcoal-900 hover:text-gold-700 underline">
-                      View Cake →
+                    <span className="font-serif text-sm font-bold text-gold-700 block">
+                      From ₹{(activeSlide.priceStartingFrom || 0).toLocaleString()}
+                    </span>
+                    <Link
+                      href={activeSlide.ctaLink || '/catalog'}
+                      className="text-[10px] font-bold text-charcoal-900 hover:text-gold-700 underline"
+                    >
+                      View Details →
                     </Link>
                   </div>
                 </div>
 
-                {/* Carousel Controls */}
-                <button
-                  onClick={() => setCurrentIdx((prev) => (prev === 0 ? heroCakes.length - 1 : prev - 1))}
-                  className="absolute left-2 top-1/2 -translate-y-1/2 w-8 h-8 rounded-full bg-white/80 text-charcoal-900 flex items-center justify-center shadow-sm opacity-80 hover:opacity-100 transition-opacity"
-                  aria-label="Previous Hero Cake"
-                >
-                  <ChevronLeft className="w-4 h-4" />
-                </button>
-
-                <button
-                  onClick={() => setCurrentIdx((prev) => (prev + 1) % heroCakes.length)}
-                  className="absolute right-2 top-1/2 -translate-y-1/2 w-8 h-8 rounded-full bg-white/80 text-charcoal-900 flex items-center justify-center shadow-sm opacity-80 hover:opacity-100 transition-opacity"
-                  aria-label="Next Hero Cake"
-                >
-                  <ChevronRight className="w-4 h-4" />
-                </button>
+                {/* Swipe Helper Hint on First Slide */}
+                <div className="absolute top-3 right-3 bg-charcoal-900/70 backdrop-blur-md text-white text-[9px] font-bold uppercase tracking-widest px-2.5 py-1 rounded-full pointer-events-none opacity-80">
+                  <span>← Swipe →</span>
+                </div>
               </div>
 
-              {/* Dots */}
-              <div className="flex justify-center space-x-1.5 mt-2.5">
-                {heroCakes.map((_, i) => (
+              {/* Dot Indicators */}
+              <div className="flex justify-center space-x-2 mt-3">
+                {slides.map((_, i) => (
                   <button
                     key={i}
-                    onClick={() => setCurrentIdx(i)}
-                    className={`h-1.5 rounded-full transition-all ${
-                      currentIdx === i ? 'w-6 bg-gold-500' : 'w-1.5 bg-warmgray-300'
+                    onClick={() => {
+                      triggerManualInteractionPause();
+                      setCurrentIdx(i);
+                    }}
+                    className={`h-1.5 rounded-full transition-all cursor-pointer ${
+                      currentIdx === i ? 'w-7 bg-gold-500' : 'w-2 bg-warmgray-300 hover:bg-warmgray-400'
                     }`}
+                    aria-label={`Go to slide ${i + 1}`}
                   />
                 ))}
               </div>
