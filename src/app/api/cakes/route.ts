@@ -4,24 +4,41 @@ import { connectToDatabase } from '@/lib/db';
 import Cake from '@/models/Cake';
 import { CAKES_DATA } from '@/data/cakes';
 
+// Serverless In-Memory Response Cache (TTL 60s)
+let cachedCakesData: { timestamp: number; cakes: any[] } | null = null;
+const CACHE_TTL_MS = 60 * 1000;
+
 export async function GET(req: NextRequest) {
   try {
+    const now = Date.now();
+    if (cachedCakesData && now - cachedCakesData.timestamp < CACHE_TTL_MS) {
+      return NextResponse.json(
+        { success: true, count: cachedCakesData.cakes.length, cakes: cachedCakesData.cakes, cached: true },
+        { headers: { 'Cache-Control': 's-maxage=60, stale-while-revalidate=300' } }
+      );
+    }
+
     await connectToDatabase();
     
-    // Seed initial data if MongoDB database is empty
-    let cakes = await Cake.find({}).sort({ createdAt: -1 });
+    // Seed initial data if MongoDB database is empty & use lean query for fast performance
+    let cakes = await Cake.find({}).sort({ createdAt: -1 }).lean();
 
     if (!cakes || cakes.length === 0) {
       console.log('Seeding initial cakes data into MongoDB Atlas...');
       await Cake.insertMany(CAKES_DATA);
-      cakes = await Cake.find({}).sort({ createdAt: -1 });
+      cakes = await Cake.find({}).sort({ createdAt: -1 }).lean();
     }
 
-    return NextResponse.json({
-      success: true,
-      count: cakes.length,
-      cakes,
-    });
+    cachedCakesData = { timestamp: now, cakes };
+
+    return NextResponse.json(
+      {
+        success: true,
+        count: cakes.length,
+        cakes,
+      },
+      { headers: { 'Cache-Control': 's-maxage=60, stale-while-revalidate=300' } }
+    );
   } catch (error: any) {
     console.error('MongoDB Atlas GET error:', error);
     // Fallback to static CAKES_DATA if DB connection fails
@@ -44,6 +61,9 @@ export async function POST(req: NextRequest) {
     }
 
     const newCake = await Cake.create(body);
+
+    // Invalidate in-memory cache
+    cachedCakesData = null;
 
     // On-Demand ISR Revalidation
     try {
@@ -78,6 +98,9 @@ export async function PUT(req: NextRequest) {
       upsert: true,
     });
 
+    // Invalidate in-memory cache
+    cachedCakesData = null;
+
     // On-Demand ISR Revalidation
     try {
       revalidatePath('/');
@@ -108,6 +131,9 @@ export async function DELETE(req: NextRequest) {
     }
 
     await Cake.deleteOne({ id });
+
+    // Invalidate in-memory cache
+    cachedCakesData = null;
 
     // On-Demand ISR Revalidation
     try {

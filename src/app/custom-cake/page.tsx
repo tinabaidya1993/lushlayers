@@ -5,8 +5,13 @@ import Image from 'next/image';
 import { CUSTOMIZER_OPTIONS } from '@/data/cakes';
 import { CustomizationSelection } from '@/types';
 import { Sparkles, MessageCircle, Check, AlertCircle, Upload, CheckCircle2 } from 'lucide-react';
+import dynamic from 'next/dynamic';
 import { buildCustomCakeWhatsAppUrl } from '@/lib/whatsapp';
-import RealisticCakeCanvas from '@/components/customizer/RealisticCakeCanvas';
+
+const RealisticCakeCanvas = dynamic(() => import('@/components/customizer/RealisticCakeCanvas'), {
+  ssr: false,
+  loading: () => <div className="w-full aspect-square rounded-2xl bg-cream-100 animate-pulse border border-warmgray-200" />,
+});
 
 export default function CustomCakePage() {
   const [step, setStep] = useState<number>(1);

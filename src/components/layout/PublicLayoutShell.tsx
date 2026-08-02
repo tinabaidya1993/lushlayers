@@ -2,11 +2,13 @@
 
 import React from 'react';
 import { usePathname } from 'next/navigation';
+import dynamic from 'next/dynamic';
 import Navbar from '@/components/layout/Navbar';
 import Footer from '@/components/layout/Footer';
 import FloatingWhatsApp from '@/components/ui/FloatingWhatsApp';
-import GoToTop from '@/components/ui/GoToTop';
-import FloatingReviewsModal from '@/components/ui/FloatingReviewsModal';
+
+const GoToTop = dynamic(() => import('@/components/ui/GoToTop'), { ssr: false });
+const FloatingReviewsModal = dynamic(() => import('@/components/ui/FloatingReviewsModal'), { ssr: false });
 
 export default function PublicLayoutShell({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
