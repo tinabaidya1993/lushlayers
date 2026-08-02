@@ -1,24 +1,37 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
 import CakeCard from '@/components/ui/CakeCard';
 import CakeModal from '@/components/ui/CakeModal';
 import OrderFormModal from '@/components/catalog/OrderFormModal';
 import { CAKES_DATA } from '@/data/cakes';
 import { CakeItem } from '@/types';
-import { Sparkles, Flame, ArrowRight, Star } from 'lucide-react';
+import { Sparkles, Flame, ArrowRight, Star, ChevronRight } from 'lucide-react';
 
 export default function FeaturedSection() {
+  const [cakes, setCakes] = useState<CakeItem[]>(CAKES_DATA);
   const [selectedQuickViewCake, setSelectedQuickViewCake] = useState<CakeItem | null>(null);
   const [selectedOrderCake, setSelectedOrderCake] = useState<CakeItem | null>(null);
   const [selectedOrderWeight, setSelectedOrderWeight] = useState<string>('');
   const [selectedOrderPrice, setSelectedOrderPrice] = useState<number>(0);
 
+  // Fetch Live Cakes from MongoDB Atlas API
+  useEffect(() => {
+    fetch('/api/cakes')
+      .then((res) => res.json())
+      .then((data) => {
+        if (data.success && data.cakes && data.cakes.length > 0) {
+          setCakes(data.cakes);
+        }
+      })
+      .catch((err) => console.warn('Live cakes fetch fallback:', err));
+  }, []);
+
   // Filter 3 distinct collections for homepage
-  const featuredCakes = CAKES_DATA.filter((c) => c.featured || c.bestseller).slice(0, 4);
-  const bestsellerCakes = CAKES_DATA.filter((c) => c.bestseller).slice(0, 4);
-  const newArrivalCakes = CAKES_DATA.filter((c) => c.newArrival || !c.bestseller).slice(0, 4);
+  const featuredCakes = cakes.filter((c) => c.featured || c.bestseller).slice(0, 4);
+  const bestsellerCakes = cakes.filter((c) => c.bestseller).slice(0, 4);
+  const newArrivalCakes = cakes.filter((c) => c.newArrival || (!c.bestseller && !c.featured)).slice(0, 4);
 
   const handleOrderNow = (cake: CakeItem, weightLabel?: string, price?: number) => {
     setSelectedOrderCake(cake);
@@ -99,7 +112,7 @@ export default function FeaturedSection() {
         </div>
       </section>
 
-      {/* 3. NEWEST SEASONAL CREATIONS SECTION */}
+      {/* 3. NEWEST SEASONAL CREATIONS SECTION (1-Row 4-Item Page + View More Redirect to Catalog) */}
       <section className="py-10 sm:py-14 bg-white">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           
@@ -111,7 +124,7 @@ export default function FeaturedSection() {
                   Newest Home-Baked Arrivals
                 </h3>
               </div>
-              <p className="text-xs text-warmgray-600 font-medium">Fresh custom designs handcrafted by Tina Baidya</p>
+              <p className="text-xs text-warmgray-600 font-medium">Fresh custom designs handcrafted by Owner Tina Manna</p>
             </div>
 
             <Link
@@ -122,6 +135,7 @@ export default function FeaturedSection() {
             </Link>
           </div>
 
+          {/* 1 Row Grid (4 items) */}
           <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3.5 sm:gap-6">
             {newArrivalCakes.map((cake) => (
               <CakeCard
@@ -131,6 +145,17 @@ export default function FeaturedSection() {
                 onOrderNow={(item) => handleOrderNow(item)}
               />
             ))}
+          </div>
+
+          {/* 1-Time Pagination Action / View More Redirect to Catalog */}
+          <div className="mt-8 text-center">
+            <Link
+              href="/catalog"
+              className="inline-flex items-center space-x-2 px-6 py-3 rounded-full bg-cream-100 border border-gold-400 text-gold-800 hover:bg-gold-500 hover:text-white font-bold text-xs uppercase tracking-widest transition-all shadow-sm active:scale-95 cursor-pointer"
+            >
+              <span>View More New Cakes in Full Catalog</span>
+              <ChevronRight className="w-4 h-4" />
+            </Link>
           </div>
 
           {/* EXPLORE FULL CATALOG CALL-TO-ACTION BANNER (CRYSTAL CLEAR HIGH CONTRAST) */}

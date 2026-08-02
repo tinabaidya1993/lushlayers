@@ -165,8 +165,8 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
                 <ShieldCheck className="w-4 h-4 text-gold-600" />
               </div>
               <div className="overflow-hidden">
-                <p className="text-xs font-bold text-charcoal-900 truncate">{user?.name || 'Tina Baidya'}</p>
-                <p className="text-[10px] text-emerald-700 font-bold truncate">{user?.role || 'Founder & Admin'}</p>
+                <p className="text-xs font-bold text-charcoal-900 truncate">{user?.name || 'Tina Manna'}</p>
+                <p className="text-[10px] text-emerald-700 font-bold truncate">{user?.role || 'Owner & Master Chef'}</p>
               </div>
             </div>
           )}
@@ -235,8 +235,8 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
               <div className="flex items-center space-x-3 p-2 bg-cream-50 rounded-xl">
                 <ShieldCheck className="w-4 h-4 text-gold-600" />
                 <div className="overflow-hidden text-xs">
-                  <p className="font-bold text-charcoal-900 truncate">{user?.name || 'Tina Baidya'}</p>
-                  <p className="text-[10px] text-emerald-700 font-bold truncate">{user?.role || 'Founder & Admin'}</p>
+                  <p className="font-bold text-charcoal-900 truncate">{user?.name || 'Tina Manna'}</p>
+                  <p className="text-[10px] text-emerald-700 font-bold truncate">{user?.role || 'Owner & Master Chef'}</p>
                 </div>
               </div>
               <button

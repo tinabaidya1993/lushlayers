@@ -79,13 +79,13 @@ export default function AdminDashboardPage() {
         <div>
           <div className="inline-flex items-center space-x-1.5 text-gold-700 text-[10px] uppercase tracking-widest font-bold mb-1">
             <Sparkles className="w-3.5 h-3.5 text-gold-600" />
-            <span>SaaS Control Room</span>
+            <span>Lush Layers Admin Console</span>
           </div>
           <h1 className="font-serif text-3xl font-bold text-charcoal-900">
-            Atelier Executive Dashboard
+            Lush Layers Admin Dashboard
           </h1>
           <p className="text-xs text-warmgray-500 font-medium">
-            Live overview of cake inventory, category collections, and incoming WhatsApp order queries.
+            Live overview of cake inventory, category collections, and WhatsApp order queries for Lush Layers by Owner Tina Manna.
           </p>
         </div>
 
@@ -113,7 +113,7 @@ export default function AdminDashboardPage() {
           </div>
           <p className="font-serif text-3xl font-bold text-charcoal-900">{totalCakes}</p>
           <p className="text-[11px] text-emerald-700 font-semibold flex items-center">
-            <TrendingUp className="w-3.5 h-3.5 mr-1" /> Active in Atelier Catalog
+            <TrendingUp className="w-3.5 h-3.5 mr-1" /> Active in Lush Layers Catalog
           </p>
         </div>
 
