@@ -37,16 +37,14 @@ export default function OrderFormModal({
     };
   }, [cake]);
 
-  if (!cake) return null;
-
   const defaultWeight = selectedWeightOption || {
     weightKg: 1.5,
-    label: selectedWeightLabel || (cake.weightOptions && cake.weightOptions[0] ? cake.weightOptions[0].label : cake?.servings || '1.5 kg'),
-    price: selectedPrice || (cake.weightOptions && cake.weightOptions[0] ? cake.weightOptions[0].price : cake?.priceStartingFrom || 1500),
+    label: selectedWeightLabel || (cake?.weightOptions && cake.weightOptions[0] ? cake.weightOptions[0].label : cake?.servings || '1.5 kg'),
+    price: selectedPrice || (cake?.weightOptions && cake.weightOptions[0] ? cake.weightOptions[0].price : cake?.priceStartingFrom || 1500),
   };
 
   const [weight, setWeight] = useState(defaultWeight);
-  const [flavor, setFlavor] = useState(selectedFlavor || (cake.flavors && cake.flavors[0] ? cake.flavors[0] : 'Signature Vanilla Bean'));
+  const [flavor, setFlavor] = useState(selectedFlavor || (cake?.flavors && cake.flavors[0] ? cake.flavors[0] : 'Signature Vanilla Bean'));
   const [shape, setShape] = useState(selectedShape || 'Classic Round');
   const [creamType, setCreamType] = useState('Swiss Meringue Buttercream');
   const [themeColor, setThemeColor] = useState('Ivory & Gold Leaf');
@@ -81,6 +79,8 @@ export default function OrderFormModal({
       setShape(selectedShape || 'Classic Round');
     }
   }, [cake, selectedWeightLabel, selectedPrice, selectedFlavor, selectedShape, selectedWeightOption]);
+
+  if (!cake) return null;
 
   // Form Validation
   const isValid = customerName.trim().length >= 2 && phoneNumber.trim().length >= 8 && deliveryAddress.trim().length >= 5;
