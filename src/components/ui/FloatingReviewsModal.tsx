@@ -1,15 +1,28 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import { Star, X, Send, CheckCircle2, Sparkles, BadgeCheck } from 'lucide-react';
+import { MessageSquare, Star, X, Send, CheckCircle2, User, Sparkles, ThumbsUp, BadgeCheck } from 'lucide-react';
+import { useScrollLock } from '@/hooks/useScrollLock';
+
+interface Review {
+  id?: string;
+  _id?: string;
+  name?: string;
+  customerName?: string;
+  orderId?: string;
+  rating: number;
+  comment: string;
+  date: string;
+  verified?: boolean;
+}
 
 export default function FloatingReviewsModal() {
   const [isOpen, setIsOpen] = useState(false);
   const [activeTab, setActiveTab] = useState<'read' | 'write'>('read');
-  const [reviews, setReviews] = useState<any[]>([]);
+  const [reviews, setReviews] = useState<Review[]>([]);
   const [loading, setLoading] = useState(false);
   
-  // Submit Form State (All fields mandatory)
+  // Submit Form State
   const [customerName, setCustomerName] = useState('');
   const [orderId, setOrderId] = useState('');
   const [rating, setRating] = useState(5);
@@ -17,17 +30,8 @@ export default function FloatingReviewsModal() {
   const [submitSuccess, setSubmitSuccess] = useState(false);
   const [submitting, setSubmitting] = useState(false);
 
-  // Lock background body scroll when reviews modal is active
-  useEffect(() => {
-    if (isOpen) {
-      document.body.style.overflow = 'hidden';
-    } else {
-      document.body.style.overflow = 'auto';
-    }
-    return () => {
-      document.body.style.overflow = 'auto';
-    };
-  }, [isOpen]);
+  // Global Scroll Lock when reviews modal is active
+  useScrollLock(isOpen);
 
   useEffect(() => {
     fetchReviews();
@@ -115,7 +119,7 @@ export default function FloatingReviewsModal() {
           />
 
           {/* Modal Content */}
-          <div className="relative w-full max-w-lg bg-white rounded-3xl border border-warmgray-200 shadow-2xl z-10 my-auto animate-fade-in overflow-hidden max-h-[85vh] flex flex-col">
+          <div className="relative w-full max-w-lg bg-white rounded-3xl border border-warmgray-200 shadow-2xl z-10 my-auto animate-fade-in overflow-hidden max-h-[85vh] flex flex-col scroll-lock-overlay">
             
             {/* Header with HIGH CONTRAST GOLDEN CLOSE BUTTON */}
             <div className="p-4 sm:p-5 bg-gradient-to-r from-charcoal-950 via-charcoal-900 to-charcoal-950 text-white flex justify-between items-center border-b border-gold-500/30">

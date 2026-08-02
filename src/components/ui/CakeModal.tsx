@@ -5,6 +5,7 @@ import Image from 'next/image';
 import { CakeItem } from '@/types';
 import { X, Sparkles, MessageCircle, CheckCircle2, Flame, Clock } from 'lucide-react';
 import { buildCakeInquiryWhatsAppUrl } from '@/lib/whatsapp';
+import { useScrollLock } from '@/hooks/useScrollLock';
 
 interface CakeModalProps {
   cake: CakeItem | null;
@@ -18,17 +19,8 @@ export default function CakeModal({ cake, onClose, onOpenOrderForm }: CakeModalP
   const [selectedFlavor, setSelectedFlavor] = useState<string>('');
   const [customNotes, setCustomNotes] = useState<string>('');
 
-  // Lock background body scroll when modal is active
-  useEffect(() => {
-    if (cake) {
-      document.body.style.overflow = 'hidden';
-    } else {
-      document.body.style.overflow = 'auto';
-    }
-    return () => {
-      document.body.style.overflow = 'auto';
-    };
-  }, [cake]);
+  // Global Scroll Lock when modal is active
+  useScrollLock(Boolean(cake));
 
   if (!cake) return null;
 
@@ -64,7 +56,7 @@ export default function CakeModal({ cake, onClose, onOpenOrderForm }: CakeModalP
       />
 
       {/* Modal Container */}
-      <div className="relative w-full max-w-4xl bg-white border border-warmgray-200 rounded-3xl overflow-hidden shadow-2xl z-10 my-auto animate-fade-in max-h-[90vh] flex flex-col md:block overflow-y-auto md:overflow-hidden">
+      <div className="relative w-full max-w-4xl bg-white border border-warmgray-200 rounded-3xl overflow-hidden shadow-2xl z-10 my-auto animate-fade-in max-h-[90vh] flex flex-col md:block overflow-y-auto md:overflow-hidden scroll-lock-overlay">
         
         {/* PROMINENT VISIBLE CLOSE BUTTON */}
         <button

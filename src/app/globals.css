@@ -54,3 +54,14 @@ body {
   backdrop-filter: blur(12px);
   -webkit-backdrop-filter: blur(12px);
 }
+
+/* Global Scroll Lock & Overscroll Containment Rules */
+html.scroll-locked {
+  overscroll-behavior: contain;
+}
+
+.scroll-lock-overlay {
+  overscroll-behavior: contain;
+  -webkit-overflow-scrolling: touch;
+  touch-action: pan-y;
+}

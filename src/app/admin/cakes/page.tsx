@@ -20,6 +20,8 @@ import { CAKES_DATA, CATEGORIES } from '@/data/cakes';
 import { CakeItem } from '@/types';
 import { getOptimizedCloudinaryUrl } from '@/lib/cloudinaryClient';
 
+import { useScrollLock } from '@/hooks/useScrollLock';
+
 const POUND_OPTIONS = [
   { lb: 0.5, label: '0.5 Pound (Half Pound)', multiplier: 1 },
   { lb: 1.0, label: '1 Pound (1 lb)', multiplier: 2 },
@@ -40,6 +42,9 @@ export default function AdminCakesPage() {
   const [editingCake, setEditingCake] = useState<Partial<CakeItem> | null>(null);
   const [uploadingImage, setUploadingImage] = useState(false);
   const [saveStatus, setSaveStatus] = useState<string | null>(null);
+
+  // Global Scroll Lock when editing cake modal is open
+  useScrollLock(Boolean(editingCake));
 
   // Weight & Base Price Calculation States
   const [baseHalfPoundPrice, setBaseHalfPoundPrice] = useState<number>(350);
@@ -326,7 +331,7 @@ export default function AdminCakesPage() {
       {/* Edit/Create Cake Modal */}
       {editingCake && (
         <div className="fixed inset-0 z-[1000] bg-charcoal-900/60 backdrop-blur-xs flex items-center justify-center p-4 overflow-y-auto">
-          <div className="bg-white w-full max-w-2xl rounded-3xl p-6 sm:p-8 shadow-2xl border border-warmgray-200 space-y-5 my-8 max-h-[90vh] overflow-y-auto text-xs text-charcoal-900">
+          <div className="bg-white w-full max-w-2xl rounded-3xl p-6 sm:p-8 shadow-2xl border border-warmgray-200 space-y-5 my-8 max-h-[90vh] overflow-y-auto text-xs text-charcoal-900 scroll-lock-overlay">
             
             <div className="flex justify-between items-center border-b border-warmgray-200 pb-3">
               <h3 className="font-serif text-xl font-bold text-charcoal-900">

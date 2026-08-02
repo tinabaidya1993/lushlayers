@@ -24,6 +24,7 @@ import {
   ArrowLeft,
 } from 'lucide-react';
 import { buildCakeInquiryWhatsAppUrl, buildOnePageOrderWhatsAppUrl } from '@/lib/whatsapp';
+import { useScrollLock } from '@/hooks/useScrollLock';
 
 interface CakeDetailClientProps {
   cake: CakeItem;
@@ -35,6 +36,9 @@ export default function CakeDetailClient({ cake, relatedCakes = [] }: CakeDetail
   const allImages = [cake.image, ...(cake.additionalImages || [])];
   const [activeImgIndex, setActiveImgIndex] = useState<number>(0);
   const [lightboxOpen, setLightboxOpen] = useState<boolean>(false);
+
+  // Global Scroll Lock when Lightbox Modal is open
+  useScrollLock(lightboxOpen);
 
   // Customization States
   const [selectedWeightIdx, setSelectedWeightIdx] = useState<number>(0);
@@ -219,7 +223,7 @@ export default function CakeDetailClient({ cake, relatedCakes = [] }: CakeDetail
 
       {/* Lightbox Modal */}
       {lightboxOpen && (
-        <div className="fixed inset-0 z-[1100] bg-charcoal-900/90 backdrop-blur-md flex items-center justify-center p-4">
+        <div className="fixed inset-0 z-[1100] bg-charcoal-900/90 backdrop-blur-md flex items-center justify-center p-4 scroll-lock-overlay">
           <button onClick={() => setLightboxOpen(false)} className="absolute top-6 right-6 p-3 text-white hover:text-gold-400">
             <X className="w-6 h-6" />
           </button>

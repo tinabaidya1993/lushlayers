@@ -18,6 +18,7 @@ import {
   Phone
 } from 'lucide-react';
 import { BOUTIQUE_WHATSAPP_NUMBER } from '@/lib/whatsapp';
+import { useScrollLock } from '@/hooks/useScrollLock';
 
 export default function AdminOrdersPage() {
   const [orders, setOrders] = useState<any[]>([]);
@@ -25,6 +26,9 @@ export default function AdminOrdersPage() {
   const [search, setSearch] = useState('');
   const [statusFilter, setStatusFilter] = useState('all');
   const [selectedOrder, setSelectedOrder] = useState<any | null>(null);
+
+  // Global Scroll Lock when order detail modal is active
+  useScrollLock(Boolean(selectedOrder));
 
   useEffect(() => {
     fetchOrders();
@@ -147,7 +151,7 @@ export default function AdminOrdersPage() {
       {/* Order Detail Modal */}
       {selectedOrder && (
         <div className="fixed inset-0 z-[1000] bg-charcoal-900/60 backdrop-blur-xs flex items-center justify-center p-4 overflow-y-auto">
-          <div className="bg-white w-full max-w-xl rounded-3xl p-6 sm:p-8 shadow-2xl border border-warmgray-200 space-y-4 my-8 text-xs text-charcoal-900">
+          <div className="bg-white w-full max-w-xl rounded-3xl p-6 sm:p-8 shadow-2xl border border-warmgray-200 space-y-4 my-8 text-xs text-charcoal-900 scroll-lock-overlay">
             
             <div className="flex justify-between items-center border-b border-warmgray-200 pb-3">
               <div>

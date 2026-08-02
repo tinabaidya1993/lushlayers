@@ -5,6 +5,7 @@ import Image from 'next/image';
 import { Plus, Edit, Trash2, Layers, Sparkles, CheckCircle2, X, Upload, RefreshCw } from 'lucide-react';
 import { CATEGORIES } from '@/data/cakes';
 import { CategoryInfo } from '@/types';
+import { useScrollLock } from '@/hooks/useScrollLock';
 
 export default function AdminCategoriesPage() {
   const [categories, setCategories] = useState<CategoryInfo[]>([]);
@@ -12,6 +13,8 @@ export default function AdminCategoriesPage() {
   const [editingCategory, setEditingCategory] = useState<Partial<CategoryInfo> | null>(null);
   const [uploadingImage, setUploadingImage] = useState(false);
   const [saveStatus, setSaveStatus] = useState<string | null>(null);
+
+  useScrollLock(Boolean(editingCategory));
 
   useEffect(() => {
     fetchLiveCategories();
@@ -161,7 +164,7 @@ export default function AdminCategoriesPage() {
       {/* Edit/Create Category Modal */}
       {editingCategory && (
         <div className="fixed inset-0 z-[1000] bg-charcoal-900/60 backdrop-blur-xs flex items-center justify-center p-4 overflow-y-auto">
-          <div className="bg-white w-full max-w-lg rounded-3xl p-6 sm:p-8 shadow-2xl border border-warmgray-200 space-y-4 my-8 text-xs text-charcoal-900">
+          <div className="bg-white w-full max-w-lg rounded-3xl p-6 sm:p-8 shadow-2xl border border-warmgray-200 space-y-4 my-8 text-xs text-charcoal-900 scroll-lock-overlay">
             
             <div className="flex justify-between items-center border-b border-warmgray-200 pb-3">
               <h3 className="font-serif text-xl font-bold text-charcoal-900">

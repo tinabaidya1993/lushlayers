@@ -23,6 +23,8 @@ import {
   Star
 } from 'lucide-react';
 
+import { useScrollLock } from '@/hooks/useScrollLock';
+
 interface AuthUser {
   email: string;
   name: string;
@@ -37,6 +39,9 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
   const [mobileDrawerOpen, setMobileDrawerOpen] = useState(false);
   const [user, setUser] = useState<AuthUser | null>(null);
   const [checkingAuth, setCheckingAuth] = useState(true);
+
+  // Global Scroll Lock when mobile drawer is open
+  useScrollLock(mobileDrawerOpen);
 
   // Check Auth via /api/admin/me
   useEffect(() => {
@@ -217,7 +222,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
             onClick={() => setMobileDrawerOpen(false)}
           />
           
-          <div className="relative w-4/5 max-w-xs bg-white h-full shadow-2xl flex flex-col justify-between p-5 z-10 animate-fade-in">
+          <div className="relative w-4/5 max-w-xs bg-white h-full shadow-2xl flex flex-col justify-between p-5 z-10 animate-fade-in scroll-lock-overlay">
             <div>
               <div className="flex justify-between items-center pb-4 border-b border-warmgray-200">
                 <div className="flex items-center space-x-2">

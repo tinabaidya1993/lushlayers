@@ -6,12 +6,16 @@ import Image from 'next/image';
 import { usePathname, useRouter } from 'next/navigation';
 import { Menu, X, Sparkles, MessageCircle, Phone, MapPin, Clock, Search } from 'lucide-react';
 import { buildGeneralInquiryWhatsAppUrl } from '@/lib/whatsapp';
+import { useScrollLock } from '@/hooks/useScrollLock';
 
 export default function Navbar() {
   const [scrolled, setScrolled] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const pathname = usePathname();
   const router = useRouter();
+
+  // Global Scroll Lock when mobile menu is active
+  useScrollLock(mobileMenuOpen);
 
   // 3 Fast Clicks on Logo to Open Admin Panel
   const [clickCount, setClickCount] = useState<number>(0);
@@ -48,18 +52,6 @@ export default function Navbar() {
     window.addEventListener('scroll', handleScroll);
     return () => window.removeEventListener('scroll', handleScroll);
   }, []);
-
-  // Lock scroll when mobile menu is active
-  useEffect(() => {
-    if (mobileMenuOpen) {
-      document.body.style.overflow = 'hidden';
-    } else {
-      document.body.style.overflow = 'auto';
-    }
-    return () => {
-      document.body.style.overflow = 'auto';
-    };
-  }, [mobileMenuOpen]);
 
   const navLinks = [
     { name: 'Home', href: '/' },
@@ -191,7 +183,7 @@ export default function Navbar() {
 
       {/* FAILSAFE FIXED MOBILE & TABLET DROPDOWN MENU CONTAINER */}
       {mobileMenuOpen && (
-        <div className="fixed inset-x-0 top-[60px] sm:top-[64px] z-[999] bg-white border-b border-warmgray-300 shadow-2xl animate-fade-in lg:hidden overflow-y-auto max-h-[calc(100vh-64px)]">
+        <div className="fixed inset-x-0 top-[60px] sm:top-[64px] z-[999] bg-white border-b border-warmgray-300 shadow-2xl animate-fade-in lg:hidden overflow-y-auto max-h-[calc(100vh-64px)] scroll-lock-overlay">
           <div className="max-w-4xl mx-auto px-4 py-5 space-y-4 bg-white text-charcoal-900">
             
             {/* Header Title inside Dropdown */}

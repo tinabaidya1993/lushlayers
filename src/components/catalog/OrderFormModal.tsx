@@ -5,6 +5,7 @@ import Image from 'next/image';
 import { X, Sparkles, MessageCircle, CheckCircle2, Upload, Check } from 'lucide-react';
 import { CakeItem, OrderFormDetails } from '@/types';
 import { buildOnePageOrderWhatsAppUrl } from '@/lib/whatsapp';
+import { useScrollLock } from '@/hooks/useScrollLock';
 
 interface OrderFormModalProps {
   cake: CakeItem | null;
@@ -25,17 +26,8 @@ export default function OrderFormModal({
   selectedShape,
   onClose,
 }: OrderFormModalProps) {
-  // Lock background body scroll when order modal is active
-  useEffect(() => {
-    if (cake) {
-      document.body.style.overflow = 'hidden';
-    } else {
-      document.body.style.overflow = 'auto';
-    }
-    return () => {
-      document.body.style.overflow = 'auto';
-    };
-  }, [cake]);
+  // Global Scroll Lock when order modal is active
+  useScrollLock(Boolean(cake));
 
   const defaultWeight = selectedWeightOption || {
     weightKg: 1.5,
@@ -203,7 +195,7 @@ export default function OrderFormModal({
 
   return (
     <div className="fixed inset-0 z-[1000] bg-charcoal-900/75 backdrop-blur-md flex items-center justify-center p-3 sm:p-4 overflow-hidden">
-      <div className="bg-white w-full max-w-2xl rounded-3xl p-5 sm:p-7 shadow-2xl border border-warmgray-200 space-y-5 my-auto max-h-[90vh] overflow-y-auto text-xs text-charcoal-900 animate-fade-in relative">
+      <div className="bg-white w-full max-w-2xl rounded-3xl p-5 sm:p-7 shadow-2xl border border-warmgray-200 space-y-5 my-auto max-h-[90vh] overflow-y-auto text-xs text-charcoal-900 animate-fade-in relative scroll-lock-overlay">
         
         {/* Close Button */}
         <button
