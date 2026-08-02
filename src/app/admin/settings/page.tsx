@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
+import Image from 'next/image';
 import {
   Settings,
   Save,
@@ -15,7 +16,11 @@ import {
   Trash2,
   Edit,
   X,
+  Upload,
+  Heart,
+  Sparkles,
 } from 'lucide-react';
+import { optimizeImageClientSide } from '@/lib/imageOptimizer';
 
 interface AccessoryItem {
   id: string;
@@ -23,6 +28,15 @@ interface AccessoryItem {
   emoji: string;
   price: number;
   active: boolean;
+}
+
+interface OurStoryData {
+  badgeTagline?: string;
+  title?: string;
+  description?: string;
+  bakerName?: string;
+  image1?: string;
+  image2?: string;
 }
 
 interface SiteSettingsData {
@@ -34,6 +48,7 @@ interface SiteSettingsData {
   instagram: string;
   facebook: string;
   accessories: AccessoryItem[];
+  ourStory: OurStoryData;
 }
 
 const DEFAULT_SETTINGS: SiteSettingsData = {
@@ -51,12 +66,21 @@ const DEFAULT_SETTINGS: SiteSettingsData = {
     { id: 'sparklers', name: 'Golden Party Sparklers (Pack of 2)', emoji: '💖', price: 80, active: true },
     { id: 'crown', name: 'Birthday Crown / Sash', emoji: '👑', price: 120, active: true },
   ],
+  ourStory: {
+    badgeTagline: 'Made With Love & Passion',
+    title: 'Artisanal Ingredients & 24K Gold Leafing',
+    description: 'Freshly baked to order using authentic gourmet baking techniques, Valrhona single-origin chocolate, Madagascar bourbon vanilla pods, and organic berries.',
+    bakerName: 'Tina Manna (Owner & Pastry Chef)',
+    image1: 'https://images.unsplash.com/photo-1588195538326-c5b1e9f80a1b?auto=format&fit=crop&w=600&q=85',
+    image2: 'https://images.unsplash.com/photo-1535141192574-5d4897c13136?auto=format&fit=crop&w=600&q=85',
+  },
 };
 
 export default function AdminSettingsPage() {
   const [settings, setSettings] = useState<SiteSettingsData>(DEFAULT_SETTINGS);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
+  const [uploadingImage, setUploadingImage] = useState<string | null>(null);
   const [saveStatus, setSaveStatus] = useState<'success' | 'error' | null>(null);
 
   // New Accessory Form State
@@ -67,7 +91,6 @@ export default function AdminSettingsPage() {
     price: 50,
     active: true,
   });
-  const [editingAccessoryId, setEditingAccessoryId] = useState<string | null>(null);
 
   useEffect(() => {
     fetchSettings();
@@ -91,6 +114,14 @@ export default function AdminSettingsPage() {
             data.settings.accessories && data.settings.accessories.length > 0
               ? data.settings.accessories
               : DEFAULT_SETTINGS.accessories,
+          ourStory: {
+            badgeTagline: data.settings.ourStory?.badgeTagline || DEFAULT_SETTINGS.ourStory.badgeTagline,
+            title: data.settings.ourStory?.title || DEFAULT_SETTINGS.ourStory.title,
+            description: data.settings.ourStory?.description || DEFAULT_SETTINGS.ourStory.description,
+            bakerName: data.settings.ourStory?.bakerName || DEFAULT_SETTINGS.ourStory.bakerName,
+            image1: data.settings.ourStory?.image1 || DEFAULT_SETTINGS.ourStory.image1,
+            image2: data.settings.ourStory?.image2 || DEFAULT_SETTINGS.ourStory.image2,
+          },
         });
       }
     } catch (err) {
@@ -120,6 +151,41 @@ export default function AdminSettingsPage() {
     } finally {
       setSaving(false);
       setTimeout(() => setSaveStatus(null), 4000);
+    }
+  };
+
+  // Cloudinary Image Upload with Client WebP Compression for Story Images
+  const handleStoryImageUpload = async (e: React.ChangeEvent<HTMLInputElement>, imageKey: 'image1' | 'image2') => {
+    if (!e.target.files || !e.target.files[0]) return;
+    const rawFile = e.target.files[0];
+
+    try {
+      setUploadingImage(imageKey);
+      const optRes = await optimizeImageClientSide(rawFile);
+      const formData = new FormData();
+      formData.append('file', optRes.file);
+
+      const res = await fetch('/api/upload', {
+        method: 'POST',
+        body: formData,
+      });
+
+      const data = await res.json();
+
+      if (res.ok && data.success && data.images?.[0]) {
+        const uploadedUrl = data.images[0].secure_url || data.images[0].url;
+        setSettings((prev) => ({
+          ...prev,
+          ourStory: {
+            ...prev.ourStory,
+            [imageKey]: uploadedUrl,
+          },
+        }));
+      }
+    } catch (err) {
+      alert('Story image upload failed');
+    } finally {
+      setUploadingImage(null);
     }
   };
 
@@ -167,19 +233,20 @@ export default function AdminSettingsPage() {
   }
 
   return (
-    <div className="space-y-6 max-w-4xl">
+    <div className="space-y-6 max-w-4xl text-charcoal-900">
+      
       {/* Header */}
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 bg-white p-5 rounded-3xl border border-warmgray-200 shadow-sm">
         <div>
           <div className="flex items-center space-x-2">
-            <h1 className="font-serif text-3xl font-bold text-charcoal-900">Website Global Settings</h1>
+            <h1 className="font-serif text-2xl sm:text-3xl font-bold text-charcoal-900">Website Global Settings</h1>
             <span className="px-2.5 py-0.5 rounded-full text-[10px] uppercase font-bold bg-emerald-100 text-emerald-800 flex items-center space-x-1">
               <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-ping"></span>
               <span>MongoDB Persisted</span>
             </span>
           </div>
           <p className="text-xs text-warmgray-500 font-medium mt-1">
-            All settings are saved permanently to MongoDB Atlas. Changes take effect immediately.
+            Manage Website Brand Details, Our Story Section, Accessories & WhatsApp Order Settings.
           </p>
         </div>
         <button
@@ -192,9 +259,9 @@ export default function AdminSettingsPage() {
       </div>
 
       {saveStatus === 'success' && (
-        <div className="p-4 bg-emerald-50 border border-emerald-300 text-emerald-900 text-xs rounded-2xl font-bold flex items-center space-x-2">
+        <div className="p-4 bg-emerald-50 border border-emerald-300 text-emerald-900 text-xs rounded-2xl font-bold flex items-center space-x-2 animate-fade-in">
           <CheckCircle2 className="w-4 h-4 text-emerald-600" />
-          <span>All settings saved successfully to MongoDB Atlas!</span>
+          <span>All settings & Our Story section updated permanently in MongoDB Atlas!</span>
         </div>
       )}
       {saveStatus === 'error' && (
@@ -204,6 +271,137 @@ export default function AdminSettingsPage() {
       )}
 
       <form onSubmit={handleSave} className="space-y-6 text-xs text-charcoal-900">
+
+        {/* SECTION: HOMEPAGE "OUR STORY" SECTION MANAGER */}
+        <div className="bg-white rounded-3xl p-6 sm:p-8 border-2 border-gold-400 shadow-md space-y-5">
+          <div className="flex items-center space-x-2 border-b border-warmgray-200 pb-3">
+            <Heart className="w-5 h-5 text-gold-600 fill-current" />
+            <div>
+              <h2 className="font-serif text-xl font-bold text-charcoal-900">
+                Homepage "Our Story" Section Manager
+              </h2>
+              <p className="text-[11px] text-warmgray-500">
+                Customize the title, tagline, images, and description shown on the homepage "Our Story / Craftsmanship" section.
+              </p>
+            </div>
+          </div>
+
+          <div className="space-y-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div>
+                <label className="block font-bold text-warmgray-700 mb-1">Badge / Tagline *</label>
+                <input
+                  type="text"
+                  value={settings.ourStory.badgeTagline || ''}
+                  onChange={(e) =>
+                    setSettings({
+                      ...settings,
+                      ourStory: { ...settings.ourStory, badgeTagline: e.target.value },
+                    })
+                  }
+                  className="w-full px-3 py-2.5 rounded-xl border border-warmgray-300 font-bold focus:border-gold-500 focus:outline-none"
+                  placeholder="e.g. Made With Love & Passion"
+                />
+              </div>
+
+              <div>
+                <label className="block font-bold text-warmgray-700 mb-1">Baker / Owner Name</label>
+                <input
+                  type="text"
+                  value={settings.ourStory.bakerName || ''}
+                  onChange={(e) =>
+                    setSettings({
+                      ...settings,
+                      ourStory: { ...settings.ourStory, bakerName: e.target.value },
+                    })
+                  }
+                  className="w-full px-3 py-2.5 rounded-xl border border-warmgray-300 font-bold focus:border-gold-500 focus:outline-none"
+                  placeholder="e.g. Tina Manna (Master Baker & Owner)"
+                />
+              </div>
+            </div>
+
+            <div>
+              <label className="block font-bold text-warmgray-700 mb-1">Main Heading / Title *</label>
+              <input
+                type="text"
+                value={settings.ourStory.title || ''}
+                onChange={(e) =>
+                  setSettings({
+                    ...settings,
+                    ourStory: { ...settings.ourStory, title: e.target.value },
+                  })
+                }
+                className="w-full px-3 py-2.5 rounded-xl border border-warmgray-300 font-serif text-sm font-bold text-charcoal-900 focus:border-gold-500 focus:outline-none"
+                placeholder="e.g. Artisanal Ingredients & 24K Gold Leafing"
+              />
+            </div>
+
+            <div>
+              <label className="block font-bold text-warmgray-700 mb-1">Full Story Description *</label>
+              <textarea
+                rows={4}
+                value={settings.ourStory.description || ''}
+                onChange={(e) =>
+                  setSettings({
+                    ...settings,
+                    ourStory: { ...settings.ourStory, description: e.target.value },
+                  })
+                }
+                className="w-full px-3 py-2.5 rounded-xl border border-warmgray-300 font-medium text-charcoal-900 focus:border-gold-500 focus:outline-none leading-relaxed"
+                placeholder="Write your baking story, ingredients used, and artisan philosophy..."
+              />
+            </div>
+
+            {/* Upload Story Image 1 & Image 2 */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-2 border-t border-warmgray-100">
+              {/* Image 1 */}
+              <div className="p-4 rounded-2xl bg-cream-50 border border-warmgray-200 space-y-2">
+                <label className="block font-bold text-charcoal-900">Story Frame Image #1</label>
+                <div className="flex items-center space-x-3">
+                  {settings.ourStory.image1 && (
+                    <div className="relative w-16 h-16 rounded-xl overflow-hidden border border-warmgray-300 flex-shrink-0 bg-white">
+                      <Image src={settings.ourStory.image1} alt="Story 1" fill className="object-cover" />
+                    </div>
+                  )}
+                  <label className="px-4 py-2 rounded-xl border border-gold-500 text-gold-700 font-bold bg-white hover:bg-gold-50 transition-all cursor-pointer inline-flex items-center space-x-1.5">
+                    <Upload className="w-3.5 h-3.5" />
+                    <span>{uploadingImage === 'image1' ? 'Uploading...' : 'Upload Image 1'}</span>
+                    <input
+                      type="file"
+                      accept="image/*"
+                      onChange={(e) => handleStoryImageUpload(e, 'image1')}
+                      className="hidden"
+                    />
+                  </label>
+                </div>
+              </div>
+
+              {/* Image 2 */}
+              <div className="p-4 rounded-2xl bg-cream-50 border border-warmgray-200 space-y-2">
+                <label className="block font-bold text-charcoal-900">Story Frame Image #2</label>
+                <div className="flex items-center space-x-3">
+                  {settings.ourStory.image2 && (
+                    <div className="relative w-16 h-16 rounded-xl overflow-hidden border border-warmgray-300 flex-shrink-0 bg-white">
+                      <Image src={settings.ourStory.image2} alt="Story 2" fill className="object-cover" />
+                    </div>
+                  )}
+                  <label className="px-4 py-2 rounded-xl border border-gold-500 text-gold-700 font-bold bg-white hover:bg-gold-50 transition-all cursor-pointer inline-flex items-center space-x-1.5">
+                    <Upload className="w-3.5 h-3.5" />
+                    <span>{uploadingImage === 'image2' ? 'Uploading...' : 'Upload Image 2'}</span>
+                    <input
+                      type="file"
+                      accept="image/*"
+                      onChange={(e) => handleStoryImageUpload(e, 'image2')}
+                      className="hidden"
+                    />
+                  </label>
+                </div>
+              </div>
+            </div>
+
+          </div>
+        </div>
 
         {/* Section 1: Brand & WhatsApp */}
         <div className="bg-white rounded-3xl p-6 sm:p-8 border border-warmgray-200 shadow-sm space-y-5">

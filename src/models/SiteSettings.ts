@@ -8,6 +8,15 @@ export interface IAccessoryItem {
   active: boolean;
 }
 
+export interface IOurStory {
+  badgeTagline?: string;
+  title?: string;
+  description?: string;
+  bakerName?: string;
+  image1?: string;
+  image2?: string;
+}
+
 export interface ISiteSettings extends Document {
   key: string; // Always 'main' — single settings document
   siteName: string;
@@ -18,6 +27,7 @@ export interface ISiteSettings extends Document {
   instagram: string;
   facebook: string;
   accessories: IAccessoryItem[];
+  ourStory?: IOurStory;
   isSeeded?: boolean;
   updatedAt: Date;
 }
@@ -49,6 +59,14 @@ const SiteSettingsSchema: Schema = new Schema(
         { id: 'sparklers', name: 'Golden Party Sparklers (Pack of 2)', emoji: '💖', price: 80, active: true },
         { id: 'crown', name: 'Birthday Crown / Sash', emoji: '👑', price: 120, active: true },
       ],
+    },
+    ourStory: {
+      badgeTagline: { type: String, default: 'Made With Love & Passion' },
+      title: { type: String, default: 'Artisanal Ingredients & 24K Gold Leafing' },
+      description: { type: String, default: 'Freshly baked to order using authentic gourmet baking techniques, Valrhona single-origin chocolate, Madagascar bourbon vanilla pods, and organic berries.' },
+      bakerName: { type: String, default: 'Tina Manna (Owner & Pastry Chef)' },
+      image1: { type: String, default: 'https://images.unsplash.com/photo-1588195538326-c5b1e9f80a1b?auto=format&fit=crop&w=600&q=85' },
+      image2: { type: String, default: 'https://images.unsplash.com/photo-1535141192574-5d4897c13136?auto=format&fit=crop&w=600&q=85' },
     },
     isSeeded: { type: Boolean, default: false },
   },

@@ -20,30 +20,39 @@ if (!global.mongooseCache) {
 
 export async function connectToDatabase() {
   if (!MONGODB_URI) {
-    // Return null when MONGODB_URI is not configured in local environment
     return null;
   }
 
-  if (cached.conn) {
+  if (cached.conn && mongoose.connection.readyState === 1) {
     return cached.conn;
   }
 
   if (!cached.promise) {
     const opts = {
       bufferCommands: false,
+      serverSelectionTimeoutMS: 5000, // Fail fast after 5s if DB is unreachable
     };
 
     cached.promise = mongoose.connect(MONGODB_URI, opts).then((mongooseInstance) => {
       return mongooseInstance;
+    }).catch((err) => {
+      cached.promise = null;
+      console.warn('MongoDB connection warning:', err.message || err);
+      return null as any;
     });
   }
 
   try {
-    cached.conn = await cached.promise;
+    const connInstance = await cached.promise;
+    if (connInstance && mongoose.connection.readyState === 1) {
+      cached.conn = connInstance;
+      return cached.conn;
+    } else {
+      cached.promise = null;
+      return null;
+    }
   } catch (e) {
     cached.promise = null;
-    throw e;
+    return null;
   }
-
-  return cached.conn;
 }
