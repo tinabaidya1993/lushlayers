@@ -1,19 +1,36 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import Image from 'next/image';
 import CakeModal from '@/components/ui/CakeModal';
-import { CAKES_DATA } from '@/data/cakes';
 import { CakeItem } from '@/types';
 import { MessageCircle, Eye, Award } from 'lucide-react';
 import { buildCakeInquiryWhatsAppUrl } from '@/lib/whatsapp';
 
 export default function SignatureCollection() {
+  const [cakes, setCakes] = useState<CakeItem[]>([]);
   const [selectedCake, setSelectedCake] = useState<CakeItem | null>(null);
 
-  const signatureCakes = CAKES_DATA.filter(
-    (c) => c.category === 'signature' || c.category === 'wedding'
+  useEffect(() => {
+    fetch(`/api/cakes?t=${Date.now()}`, { cache: 'no-store' })
+      .then((res) => res.json())
+      .then((data) => {
+        if (data.success && Array.isArray(data.cakes)) {
+          setCakes(data.cakes);
+        } else {
+          setCakes([]);
+        }
+      })
+      .catch(() => setCakes([]));
+  }, []);
+
+  const signatureCakes = cakes.filter(
+    (c) => c.category === 'signature' || c.category === 'wedding' || c.featured
   ).slice(0, 2);
+
+  if (signatureCakes.length === 0) {
+    return null; // Return null if no signature cakes exist
+  }
 
   return (
     <section className="py-10 sm:py-14 bg-cream-50 text-charcoal-900 relative">
@@ -63,11 +80,11 @@ export default function SignatureCollection() {
                     <h3 className="font-serif text-sm sm:text-xl text-charcoal-900 font-bold line-clamp-1">
                       {cake.name}
                     </h3>
-                    <p className="text-[10px] sm:text-[11px] text-warmgray-500 font-medium">{cake.servings.split('(')[0]}</p>
+                    <p className="text-[10px] sm:text-[11px] text-warmgray-500 font-medium">{cake.servings?.split('(')[0] || '0.5 lb - 3 lb'}</p>
                   </div>
 
                   <p className="text-[11px] sm:text-xs text-warmgray-600 line-clamp-2 font-normal">
-                    {cake.shortDescription}
+                    {cake.shortDescription || cake.description}
                   </p>
 
                   <div className="pt-2 flex justify-between items-center border-t border-warmgray-100">

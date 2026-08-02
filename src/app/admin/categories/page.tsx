@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import { Plus, Edit, Trash2, Layers, Sparkles, CheckCircle2, X, RefreshCw, FolderPlus } from 'lucide-react';
+import { Plus, Edit, Trash2, Layers, Sparkles, CheckCircle2, X, RefreshCw, FolderPlus, CheckSquare, Square } from 'lucide-react';
 import { CategoryInfo } from '@/types';
 import { useScrollLock } from '@/hooks/useScrollLock';
 
@@ -13,6 +13,10 @@ export default function AdminCategoriesPage() {
   const [editingCategory, setEditingCategory] = useState<Partial<CategoryInfo> | null>(null);
   const [saveStatus, setSaveStatus] = useState<string | null>(null);
   const [customGroupInput, setCustomGroupInput] = useState('');
+
+  // Multiple Selection Checkboxes state
+  const [selectedIds, setSelectedIds] = useState<string[]>([]);
+  const [isDeletingBulk, setIsDeletingBulk] = useState(false);
 
   useScrollLock(Boolean(editingCategory));
 
@@ -27,9 +31,12 @@ export default function AdminCategoriesPage() {
       const data = await res.json();
       if (data.success && Array.isArray(data.categories)) {
         setCategories(data.categories);
+      } else {
+        setCategories([]);
       }
     } catch (err) {
       console.warn('Categories fetch error:', err);
+      setCategories([]);
     } finally {
       setLoading(false);
     }
@@ -85,6 +92,7 @@ export default function AdminCategoriesPage() {
 
     try {
       setCategories((prev) => prev.filter((c) => c.id !== id && (c as any)._id !== id));
+      setSelectedIds((prev) => prev.filter((i) => i !== id));
       const res = await fetch(`/api/categories?id=${encodeURIComponent(id)}`, { method: 'DELETE' });
       const data = await res.json();
       if (res.ok && data.success) {
@@ -102,6 +110,49 @@ export default function AdminCategoriesPage() {
     }
   };
 
+  // Checkbox Selection Logic
+  const toggleSelectAll = () => {
+    if (selectedIds.length === categories.length) {
+      setSelectedIds([]);
+    } else {
+      setSelectedIds(categories.map((c) => c.id));
+    }
+  };
+
+  const toggleSelectOne = (id: string) => {
+    setSelectedIds((prev) =>
+      prev.includes(id) ? prev.filter((i) => i !== id) : [...prev, id]
+    );
+  };
+
+  // Bulk Delete Multiple Checked Categories
+  const handleBulkDelete = async () => {
+    if (selectedIds.length === 0) return;
+    if (!confirm(`Are you sure you want to delete ${selectedIds.length} selected categories permanently?`)) return;
+
+    try {
+      setIsDeletingBulk(true);
+      setSaveStatus(`Deleting ${selectedIds.length} categories from MongoDB...`);
+
+      // Execute batch deletes
+      await Promise.all(
+        selectedIds.map((id) =>
+          fetch(`/api/categories?id=${encodeURIComponent(id)}`, { method: 'DELETE' })
+        )
+      );
+
+      setSelectedIds([]);
+      await fetchLiveCategories();
+      setSaveStatus(`Successfully deleted ${selectedIds.length} categories!`);
+    } catch (err) {
+      alert('Failed to delete selected categories');
+      await fetchLiveCategories();
+    } finally {
+      setIsDeletingBulk(false);
+      setTimeout(() => setSaveStatus(null), 3000);
+    }
+  };
+
   // Group categories dynamically by Parent Group
   const groupsMap: { [key: string]: CategoryInfo[] } = {};
   categories.forEach((cat) => {
@@ -115,7 +166,7 @@ export default function AdminCategoriesPage() {
   );
 
   return (
-    <div className="space-y-6 animate-fade-in max-w-5xl">
+    <div className="space-y-6 animate-fade-in max-w-5xl text-charcoal-900">
       
       {/* Header */}
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 border-b border-warmgray-200 pb-4">
@@ -128,7 +179,7 @@ export default function AdminCategoriesPage() {
             </span>
           </div>
           <p className="text-xs text-warmgray-500 font-medium mt-1">
-            Simple Parent & Child category hierarchy. Add, edit, or delete categories. No auto-refresh resets!
+            Parent & Child category hierarchy with multiple checkbox selection and bulk delete.
           </p>
         </div>
 
@@ -149,6 +200,35 @@ export default function AdminCategoriesPage() {
           </button>
         </div>
       </div>
+
+      {/* Dynamic Bulk Action Bar when Checkboxes are Ticked */}
+      {selectedIds.length > 0 && (
+        <div className="p-4 bg-red-50 border-2 border-red-300 rounded-2xl flex items-center justify-between shadow-md animate-fade-in">
+          <div className="flex items-center space-x-2">
+            <CheckSquare className="w-5 h-5 text-red-600" />
+            <span className="text-xs font-bold text-red-900">
+              {selectedIds.length} {selectedIds.length === 1 ? 'category' : 'categories'} selected
+            </span>
+          </div>
+
+          <div className="flex items-center space-x-2">
+            <button
+              onClick={() => setSelectedIds([])}
+              className="px-3 py-1.5 rounded-lg border border-red-200 bg-white text-xs font-bold text-warmgray-700 hover:bg-warmgray-50"
+            >
+              Clear Selection
+            </button>
+            <button
+              onClick={handleBulkDelete}
+              disabled={isDeletingBulk}
+              className="px-4 py-1.5 rounded-lg bg-red-600 hover:bg-red-700 text-white font-bold text-xs uppercase tracking-wider shadow-sm flex items-center space-x-1.5 cursor-pointer disabled:opacity-50"
+            >
+              <Trash2 className="w-4 h-4" />
+              <span>{isDeletingBulk ? 'Deleting Selected...' : `Delete Selected (${selectedIds.length})`}</span>
+            </button>
+          </div>
+        </div>
+      )}
 
       {saveStatus && (
         <div className="p-3.5 bg-emerald-50 border border-emerald-300 text-emerald-900 text-xs rounded-2xl font-bold flex items-center space-x-2 animate-fade-in">
@@ -280,6 +360,26 @@ export default function AdminCategoriesPage() {
         </div>
       ) : (
         <div className="space-y-6">
+          
+          {/* Select All Checkbox Header */}
+          <div className="bg-cream-100/70 px-5 py-3 rounded-2xl border border-warmgray-200 flex justify-between items-center text-xs font-bold text-charcoal-800">
+            <label className="flex items-center space-x-2.5 cursor-pointer">
+              <input
+                type="checkbox"
+                checked={selectedIds.length === categories.length && categories.length > 0}
+                onChange={toggleSelectAll}
+                className="w-4 h-4 accent-gold-600 rounded cursor-pointer"
+              />
+              <span>Select All Categories ({categories.length})</span>
+            </label>
+
+            {selectedIds.length > 0 && (
+              <span className="text-gold-800 text-xs font-bold">
+                {selectedIds.length} Selected
+              </span>
+            )}
+          </div>
+
           {Object.keys(groupsMap).map((parentGroup) => {
             const childCats = groupsMap[parentGroup];
             return (
@@ -298,41 +398,52 @@ export default function AdminCategoriesPage() {
 
                 {/* Child Category Simple Table */}
                 <div className="divide-y divide-warmgray-100">
-                  {childCats.map((cat, idx) => (
-                    <div
-                      key={cat.id}
-                      className="px-5 py-3.5 flex items-center justify-between hover:bg-cream-50/60 transition-colors"
-                    >
-                      <div className="flex items-center space-x-3">
-                        <span className="text-xs font-mono font-bold text-warmgray-400 w-5">{idx + 1}.</span>
-                        <div>
-                          <h3 className="font-sans text-sm font-bold text-charcoal-900">{cat.name}</h3>
-                          <span className="text-[10px] text-warmgray-500 font-mono">ID: {cat.id}</span>
+                  {childCats.map((cat, idx) => {
+                    const isChecked = selectedIds.includes(cat.id);
+                    return (
+                      <div
+                        key={cat.id}
+                        className={`px-5 py-3.5 flex items-center justify-between transition-colors ${
+                          isChecked ? 'bg-amber-50/70 font-bold' : 'hover:bg-cream-50/60'
+                        }`}
+                      >
+                        <div className="flex items-center space-x-3.5 min-w-0">
+                          <input
+                            type="checkbox"
+                            checked={isChecked}
+                            onChange={() => toggleSelectOne(cat.id)}
+                            className="w-4 h-4 accent-gold-600 rounded cursor-pointer flex-shrink-0"
+                          />
+                          <span className="text-xs font-mono font-bold text-warmgray-400 w-5 flex-shrink-0">{idx + 1}.</span>
+                          <div className="truncate">
+                            <h3 className="font-sans text-sm font-bold text-charcoal-900 truncate">{cat.name}</h3>
+                            <span className="text-[10px] text-warmgray-500 font-mono">ID: {cat.id}</span>
+                          </div>
+                        </div>
+
+                        <div className="flex items-center space-x-2 flex-shrink-0 pl-2">
+                          <button
+                            onClick={() => {
+                              setCustomGroupInput('');
+                              setEditingCategory(cat);
+                            }}
+                            className="px-3 py-1.5 rounded-lg border border-warmgray-300 hover:border-gold-500 hover:bg-gold-50 text-charcoal-900 text-xs font-bold inline-flex items-center space-x-1 transition-all"
+                          >
+                            <Edit className="w-3.5 h-3.5 text-gold-600" />
+                            <span>Edit</span>
+                          </button>
+
+                          <button
+                            onClick={() => handleDelete(cat.id, cat.name)}
+                            className="px-3 py-1.5 rounded-lg border border-red-200 hover:border-red-500 hover:bg-red-50 text-red-700 text-xs font-bold inline-flex items-center space-x-1 transition-all"
+                          >
+                            <Trash2 className="w-3.5 h-3.5 text-red-600" />
+                            <span>Delete</span>
+                          </button>
                         </div>
                       </div>
-
-                      <div className="flex items-center space-x-2">
-                        <button
-                          onClick={() => {
-                            setCustomGroupInput('');
-                            setEditingCategory(cat);
-                          }}
-                          className="px-3 py-1.5 rounded-lg border border-warmgray-300 hover:border-gold-500 hover:bg-gold-50 text-charcoal-900 text-xs font-bold inline-flex items-center space-x-1 transition-all"
-                        >
-                          <Edit className="w-3.5 h-3.5 text-gold-600" />
-                          <span>Edit</span>
-                        </button>
-
-                        <button
-                          onClick={() => handleDelete(cat.id, cat.name)}
-                          className="px-3 py-1.5 rounded-lg border border-red-200 hover:border-red-500 hover:bg-red-50 text-red-700 text-xs font-bold inline-flex items-center space-x-1 transition-all"
-                        >
-                          <Trash2 className="w-3.5 h-3.5 text-red-600" />
-                          <span>Delete</span>
-                        </button>
-                      </div>
-                    </div>
-                  ))}
+                    );
+                  })}
                 </div>
 
               </div>

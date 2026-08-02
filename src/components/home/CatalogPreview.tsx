@@ -1,18 +1,34 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
 import CakeCard from '@/components/ui/CakeCard';
 import CakeModal from '@/components/ui/CakeModal';
-import { CAKES_DATA } from '@/data/cakes';
 import { CakeItem } from '@/types';
 import { Sparkles, ArrowRight } from 'lucide-react';
 
 export default function CatalogPreview() {
+  const [cakes, setCakes] = useState<CakeItem[]>([]);
   const [selectedCake, setSelectedCake] = useState<CakeItem | null>(null);
 
-  // Show 4 diverse cakes
-  const previewCakes = CAKES_DATA.slice(4, 8);
+  useEffect(() => {
+    fetch(`/api/cakes?t=${Date.now()}`, { cache: 'no-store' })
+      .then((res) => res.json())
+      .then((data) => {
+        if (data.success && Array.isArray(data.cakes)) {
+          setCakes(data.cakes);
+        } else {
+          setCakes([]);
+        }
+      })
+      .catch(() => setCakes([]));
+  }, []);
+
+  const previewCakes = cakes.slice(0, 4);
+
+  if (previewCakes.length === 0) {
+    return null;
+  }
 
   return (
     <section className="py-10 sm:py-14 bg-white text-charcoal-900 relative border-t border-warmgray-200/60">
@@ -53,7 +69,7 @@ export default function CatalogPreview() {
             href="/catalog"
             className="inline-flex items-center space-x-2 bg-gold-500 hover:bg-gold-600 text-white font-bold text-xs uppercase tracking-widest px-7 py-3 rounded-full transition-all shadow-gold-soft hover:scale-105"
           >
-            <span>View Complete Atelier Catalog ({CAKES_DATA.length} Cakes)</span>
+            <span>View Complete Atelier Catalog ({cakes.length} Cakes)</span>
             <ArrowRight className="w-4 h-4" />
           </Link>
         </div>

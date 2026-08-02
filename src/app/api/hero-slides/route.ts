@@ -2,32 +2,25 @@ import { NextRequest, NextResponse } from 'next/server';
 import { revalidatePath } from 'next/cache';
 import { connectToDatabase } from '@/lib/db';
 import HeroSlide from '@/models/HeroSlide';
-import SiteSettings from '@/models/SiteSettings';
-import { DEFAULT_HERO_SLIDES } from '@/data/heroSlides';
-
-export const dynamic = 'force-dynamic';
-export const revalidate = 0;
 
 export async function GET(req: NextRequest) {
   try {
-    await connectToDatabase();
-
-    let slides = await HeroSlide.find({}).sort({ orderIndex: 1, createdAt: -1 }).lean();
-
-    if (!slides || slides.length === 0) {
-      await HeroSlide.insertMany(DEFAULT_HERO_SLIDES);
-      slides = await HeroSlide.find({}).sort({ orderIndex: 1, createdAt: -1 }).lean();
+    const conn = await connectToDatabase();
+    if (!conn) {
+      return NextResponse.json({ success: true, count: 0, slides: [] });
     }
+
+    const slides = await HeroSlide.find({}).sort({ orderIndex: 1, createdAt: -1 }).lean();
 
     return NextResponse.json(
       {
         success: true,
-        count: slides.length,
-        slides,
+        count: slides ? slides.length : 0,
+        slides: slides || [],
       },
       {
         headers: {
-          'Cache-Control': 'no-store, no-cache, must-revalidate, proxy-revalidate',
+          'Cache-Control': 'public, max-age=60, s-maxage=3600, stale-while-revalidate=86400',
         },
       }
     );
@@ -35,13 +28,12 @@ export async function GET(req: NextRequest) {
     return NextResponse.json(
       {
         success: true,
-        count: DEFAULT_HERO_SLIDES.length,
-        slides: DEFAULT_HERO_SLIDES,
-        source: 'static_fallback',
+        count: 0,
+        slides: [],
       },
       {
         headers: {
-          'Cache-Control': 'no-store, no-cache, must-revalidate, proxy-revalidate',
+          'Cache-Control': 'no-store',
         },
       }
     );
@@ -61,7 +53,7 @@ export async function POST(req: NextRequest) {
     const newSlide = await HeroSlide.create({ ...body, id: slideId });
 
     try {
-      revalidatePath('/');
+      revalidatePath('/', 'page');
     } catch (e) {}
 
     return NextResponse.json({
@@ -88,7 +80,7 @@ export async function PUT(req: NextRequest) {
     });
 
     try {
-      revalidatePath('/');
+      revalidatePath('/', 'page');
     } catch (e) {}
 
     return NextResponse.json({
@@ -102,7 +94,11 @@ export async function PUT(req: NextRequest) {
 
 export async function DELETE(req: NextRequest) {
   try {
-    await connectToDatabase();
+    const conn = await connectToDatabase();
+    if (!conn) {
+      return NextResponse.json({ error: 'Database connection not configured' }, { status: 503 });
+    }
+
     const { searchParams } = new URL(req.url);
     const id = searchParams.get('id');
 
@@ -117,13 +113,13 @@ export async function DELETE(req: NextRequest) {
     const result = await HeroSlide.deleteOne(filter);
 
     try {
-      revalidatePath('/');
+      revalidatePath('/', 'page');
     } catch (e) {}
 
     return NextResponse.json({
       success: true,
       deletedCount: result.deletedCount,
-      message: `Hero Slide ${id} deleted`,
+      message: `Hero Slide ${id} deleted permanently`,
     });
   } catch (error: any) {
     return NextResponse.json({ error: error.message || 'Failed to delete hero slide' }, { status: 500 });

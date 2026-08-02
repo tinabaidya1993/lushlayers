@@ -1,16 +1,18 @@
 'use client';
 
-import React, { useState, useMemo } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import Image from 'next/image';
 import CakeCard from '@/components/ui/CakeCard';
 import CakeModal from '@/components/ui/CakeModal';
 import OrderFormModal from '@/components/catalog/OrderFormModal';
 import SmartFilterBar, { CatalogFilterState } from '@/components/catalog/SmartFilterBar';
-import { CAKES_DATA } from '@/data/cakes';
 import { CakeItem } from '@/types';
-import { Sparkles, SlidersHorizontal } from 'lucide-react';
+import { Sparkles, SlidersHorizontal, PackageOpen } from 'lucide-react';
 
 export default function CatalogPage() {
+  const [cakes, setCakes] = useState<CakeItem[]>([]);
+  const [loading, setLoading] = useState(true);
+
   const [filters, setFilters] = useState<CatalogFilterState>({
     search: '',
     category: 'all',
@@ -26,9 +28,31 @@ export default function CatalogPage() {
   const [orderInitialWeight, setOrderInitialWeight] = useState<string>('');
   const [orderInitialPrice, setOrderInitialPrice] = useState<number>(0);
 
+  useEffect(() => {
+    fetchLiveCakes();
+  }, []);
+
+  const fetchLiveCakes = async () => {
+    try {
+      setLoading(true);
+      const res = await fetch(`/api/cakes?t=${Date.now()}`, { cache: 'no-store' });
+      const data = await res.json();
+      if (data.success && Array.isArray(data.cakes)) {
+        setCakes(data.cakes);
+      } else {
+        setCakes([]);
+      }
+    } catch (err) {
+      console.warn('Catalog live cakes fetch error:', err);
+      setCakes([]);
+    } finally {
+      setLoading(false);
+    }
+  };
+
   // Instant Smart Filter Logic
   const filteredCakes = useMemo(() => {
-    let result = [...CAKES_DATA];
+    let result = [...cakes];
 
     // 1. Search Query
     if (filters.search.trim()) {
@@ -36,9 +60,9 @@ export default function CatalogPage() {
       result = result.filter(
         (c) =>
           c.name.toLowerCase().includes(q) ||
-          c.shortDescription.toLowerCase().includes(q) ||
-          c.category.toLowerCase().includes(q) ||
-          c.flavors.some((f) => f.toLowerCase().includes(q)) ||
+          (c.shortDescription && c.shortDescription.toLowerCase().includes(q)) ||
+          (c.category && c.category.toLowerCase().includes(q)) ||
+          (c.flavors && c.flavors.some((f) => f.toLowerCase().includes(q))) ||
           (c.tags && c.tags.some((t) => t.toLowerCase().includes(q)))
       );
     }
@@ -52,7 +76,7 @@ export default function CatalogPage() {
     if (filters.flavor !== 'all') {
       const fQ = filters.flavor.toLowerCase();
       result = result.filter((c) =>
-        c.flavors.some((fl) => fl.toLowerCase().includes(fQ))
+        c.flavors && c.flavors.some((fl) => fl.toLowerCase().includes(fQ))
       );
     }
 
@@ -60,107 +84,78 @@ export default function CatalogPage() {
     if (filters.weightKg !== 'all') {
       const targetKg = parseFloat(filters.weightKg);
       result = result.filter((c) =>
-        c.weightOptions && c.weightOptions.some((w) => w.weightKg === targetKg)
+        c.weightOptions && c.weightOptions.some((w) => Math.abs(w.weightKg - targetKg) < 0.2)
       );
     }
 
-    // 5. Dietary (Egg / Eggless)
-    if (filters.eggless === 'eggless') {
-      result = result.filter((c) => c.eggless === true);
-    } else if (filters.eggless === 'egg') {
-      result = result.filter((c) => c.eggless === false);
+    // 5. Eggless Filter
+    if (filters.eggless !== 'all') {
+      const isEgglessTarget = filters.eggless === 'true';
+      result = result.filter((c) => c.eggless === isEgglessTarget);
     }
 
-    // 6. Badges Filter
-    if (filters.badge === 'bestseller') {
-      result = result.filter((c) => c.bestseller === true);
-    } else if (filters.badge === 'newArrival') {
-      result = result.filter((c) => c.newArrival === true);
-    } else if (filters.badge === 'featured') {
-      result = result.filter((c) => c.featured === true);
+    // 6. Special Badge Filter
+    if (filters.badge !== 'all') {
+      if (filters.badge === 'bestseller') result = result.filter((c) => c.bestseller);
+      if (filters.badge === 'featured') result = result.filter((c) => c.featured);
+      if (filters.badge === 'newArrival') result = result.filter((c) => c.newArrival);
     }
 
     // 7. Sort Options
-    if (filters.sortBy === 'priceLow') {
+    if (filters.sortBy === 'price-low') {
       result.sort((a, b) => a.priceStartingFrom - b.priceStartingFrom);
-    } else if (filters.sortBy === 'priceHigh') {
+    } else if (filters.sortBy === 'price-high') {
       result.sort((a, b) => b.priceStartingFrom - a.priceStartingFrom);
-    } else if (filters.sortBy === 'popular') {
-      result.sort((a, b) => (b.bestseller ? 1 : 0) - (a.bestseller ? 1 : 0));
     } else if (filters.sortBy === 'newest') {
       result.sort((a, b) => (b.newArrival ? 1 : 0) - (a.newArrival ? 1 : 0));
-    } else if (filters.sortBy === 'featured') {
-      result.sort((a, b) => (b.featured ? 1 : 0) - (a.featured ? 1 : 0));
     }
 
     return result;
-  }, [filters]);
+  }, [cakes, filters]);
 
-  const handleOpenOrder = (cake: CakeItem, weightLabel?: string, price?: number) => {
+  const handleOrderNow = (cake: CakeItem, weightLabel?: string, price?: number) => {
     setActiveOrderCake(cake);
-    setOrderInitialWeight(weightLabel || (cake.weightOptions ? cake.weightOptions[0].label : cake.servings));
+    setOrderInitialWeight(weightLabel || (cake.weightOptions && cake.weightOptions[0] ? cake.weightOptions[0].label : cake.servings));
     setOrderInitialPrice(price || cake.priceStartingFrom);
   };
 
   return (
-    <main className="min-h-screen bg-cream-50 pt-24 pb-24 text-charcoal-900">
+    <div className="bg-cream-50/50 min-h-screen text-charcoal-900 pb-16">
       
-      {/* Header Banner */}
-      <section className="bg-gradient-to-b from-cream-100 via-white to-cream-50 text-charcoal-900 py-10 sm:py-14 px-4 border-b border-warmgray-200/60 relative overflow-hidden">
-        <div className="max-w-7xl mx-auto text-center space-y-2.5 relative z-10">
-          <div className="inline-flex items-center space-x-2 px-4 py-1 rounded-full bg-white border border-gold-400 text-gold-700 shadow-sm">
+      {/* Catalog Header Hero Banner */}
+      <div className="bg-gradient-to-b from-cream-100 to-cream-50 border-b border-warmgray-200/60 py-8 sm:py-12">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center space-y-2">
+          <div className="inline-flex items-center space-x-2 px-3 py-1 rounded-full bg-gold-100 text-gold-800 text-[10px] sm:text-xs font-bold uppercase tracking-widest">
             <Sparkles className="w-3.5 h-3.5 text-gold-600" />
-            <span className="text-[11px] uppercase tracking-[0.2em] font-bold">Bespoke Cake Studio by Tina Baidya</span>
+            <span>100% Eggless Home-Baked Atelier</span>
           </div>
-          
-          <h1 className="font-serif text-3xl sm:text-5xl md:text-6xl text-charcoal-900 tracking-tight font-bold">
-            Artisanal Cake Gallery by Tina Baidya
+
+          <h1 className="font-serif text-3xl sm:text-5xl font-bold text-charcoal-900 tracking-tight">
+            Our Complete Cake Gallery
           </h1>
 
-          <p className="text-xs sm:text-sm text-warmgray-600 max-w-xl mx-auto font-normal leading-relaxed">
-            Browse our signature designs handcrafted by Tina Baidya. Filter by flavor, size, and dietary preference. Order directly via WhatsApp.
+          <p className="text-xs sm:text-sm text-warmgray-600 max-w-2xl mx-auto font-medium">
+            Explore our handcrafted luxury cakes baked fresh in Kolkata. Filter by flavor, weight size, or custom occasion.
           </p>
         </div>
-      </section>
+      </div>
 
-      {/* Smart Sticky Filter Bar */}
-      <SmartFilterBar
-        filters={filters}
-        onFilterChange={(newF) => setFilters(newF)}
-        totalCount={filteredCakes.length}
-      />
-
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-8">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-8 space-y-6">
         
-        {/* Results Counter & Applied Badge Bar */}
-        <div className="flex justify-between items-center mb-6">
-          <p className="text-xs uppercase tracking-wider text-warmgray-500 font-bold">
-            Displaying {filteredCakes.length} Masterpiece{filteredCakes.length !== 1 ? 's' : ''}
-          </p>
+        {/* Smart Filter Bar */}
+        <SmartFilterBar filters={filters} onFilterChange={setFilters} />
 
-          <span className="text-xs text-gold-700 font-semibold hidden sm:inline">
-            ✨ Click any cake for live size & price calculation
-          </span>
-        </div>
-
-        {/* Dynamic Responsive Grid Layout */}
-        {filteredCakes.length > 0 ? (
-          <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3.5 sm:gap-6">
-            {filteredCakes.map((cake) => (
-              <CakeCard
-                key={cake.id}
-                cake={cake}
-                onQuickView={(item) => setActiveQuickViewCake(item)}
-                onOrderNow={(item) => handleOpenOrder(item)}
-              />
-            ))}
+        {/* Catalog Grid View */}
+        {loading ? (
+          <div className="py-20 text-center text-xs font-bold text-warmgray-500">
+            Loading live cake gallery...
           </div>
-        ) : (
-          <div className="text-center py-20 bg-white rounded-3xl border border-warmgray-200 p-8 space-y-4 shadow-sm">
-            <SlidersHorizontal className="w-10 h-10 text-warmgray-400 mx-auto" />
-            <h3 className="font-serif text-2xl text-charcoal-900 font-bold">No matching cakes found</h3>
-            <p className="text-xs text-warmgray-500 max-w-sm mx-auto">
-              Try broadening your search query or reset dietary and size filters.
+        ) : filteredCakes.length === 0 ? (
+          <div className="py-16 text-center bg-white rounded-3xl border border-warmgray-200 p-8 space-y-3 shadow-xs">
+            <PackageOpen className="w-12 h-12 text-warmgray-400 mx-auto" />
+            <h3 className="font-serif text-xl font-bold text-charcoal-900">No Cakes Found</h3>
+            <p className="text-xs text-warmgray-500 max-w-md mx-auto">
+              No signature cakes match your active search or filter criteria. Try clearing filters or submit a custom cake request!
             </p>
             <button
               onClick={() =>
@@ -174,26 +169,37 @@ export default function CatalogPage() {
                   sortBy: 'featured',
                 })
               }
-              className="px-6 py-2.5 rounded-full bg-gold-500 text-white text-xs uppercase tracking-widest font-bold shadow-sm hover:bg-gold-600 transition-all"
+              className="px-5 py-2.5 rounded-full bg-gold-500 hover:bg-gold-600 text-white font-bold text-xs uppercase tracking-wider shadow-sm transition-all cursor-pointer"
             >
-              Reset All Filters
+              Reset Filters
             </button>
+          </div>
+        ) : (
+          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3.5 sm:gap-6">
+            {filteredCakes.map((cake) => (
+              <CakeCard
+                key={cake.id}
+                cake={cake}
+                onQuickView={(item) => setActiveQuickViewCake(item)}
+                onOrderNow={(item) => handleOrderNow(item)}
+              />
+            ))}
           </div>
         )}
 
       </div>
 
-      {/* Quick View Modal */}
+      {/* QUICK VIEW MODAL */}
       <CakeModal
         cake={activeQuickViewCake}
         onClose={() => setActiveQuickViewCake(null)}
         onOpenOrderForm={(cake, weightLabel, price) => {
           setActiveQuickViewCake(null);
-          handleOpenOrder(cake, weightLabel, price);
+          handleOrderNow(cake, weightLabel, price);
         }}
       />
 
-      {/* One-Page Order Booking Form Modal */}
+      {/* ORDER BOOKING FORM MODAL */}
       <OrderFormModal
         cake={activeOrderCake}
         selectedWeightLabel={orderInitialWeight}
@@ -201,6 +207,6 @@ export default function CatalogPage() {
         onClose={() => setActiveOrderCake(null)}
       />
 
-    </main>
+    </div>
   );
 }
