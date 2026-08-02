@@ -23,6 +23,8 @@ import {
   Star
 } from 'lucide-react';
 
+import { useScrollLock } from '@/hooks/useScrollLock';
+
 interface AuthUser {
   email: string;
   name: string;
@@ -38,6 +40,9 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
   const [user, setUser] = useState<AuthUser | null>(null);
   const [checkingAuth, setCheckingAuth] = useState(true);
 
+  // Global Scroll Lock when mobile drawer is open
+  useScrollLock(mobileDrawerOpen);
+
   // Check Auth via /api/admin/me
   useEffect(() => {
     if (pathname === '/admin/login') {
@@ -47,6 +52,32 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
 
     checkAuthSession();
   }, [pathname]);
+
+  // 1 Hour (60 Minutes) Idle Timeout Auto-Logout
+  useEffect(() => {
+    if (pathname === '/admin/login' || checkingAuth) return;
+
+    let timeoutId: NodeJS.Timeout;
+
+    const resetIdleTimer = () => {
+      clearTimeout(timeoutId);
+      // 1 hour = 60 * 60 * 1000 ms
+      timeoutId = setTimeout(() => {
+        console.log('Admin session idle for 1 hour. Auto signing out...');
+        handleLogout();
+      }, 60 * 60 * 1000);
+    };
+
+    const userActivityEvents = ['mousemove', 'keydown', 'scroll', 'click', 'touchstart'];
+    userActivityEvents.forEach((evt) => window.addEventListener(evt, resetIdleTimer));
+
+    resetIdleTimer();
+
+    return () => {
+      clearTimeout(timeoutId);
+      userActivityEvents.forEach((evt) => window.removeEventListener(evt, resetIdleTimer));
+    };
+  }, [pathname, checkingAuth]);
 
   const checkAuthSession = async () => {
     try {
@@ -165,8 +196,8 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
                 <ShieldCheck className="w-4 h-4 text-gold-600" />
               </div>
               <div className="overflow-hidden">
-                <p className="text-xs font-bold text-charcoal-900 truncate">{user?.name || 'Tina Baidya'}</p>
-                <p className="text-[10px] text-emerald-700 font-bold truncate">{user?.role || 'Founder & Admin'}</p>
+                <p className="text-xs font-bold text-charcoal-900 truncate">{user?.name || 'Tina Manna'}</p>
+                <p className="text-[10px] text-emerald-700 font-bold truncate">{user?.role || 'Owner & Master Chef'}</p>
               </div>
             </div>
           )}
@@ -191,7 +222,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
             onClick={() => setMobileDrawerOpen(false)}
           />
           
-          <div className="relative w-4/5 max-w-xs bg-white h-full shadow-2xl flex flex-col justify-between p-5 z-10 animate-fade-in">
+          <div className="relative w-4/5 max-w-xs bg-white h-full shadow-2xl flex flex-col justify-between p-5 z-10 animate-fade-in scroll-lock-overlay">
             <div>
               <div className="flex justify-between items-center pb-4 border-b border-warmgray-200">
                 <div className="flex items-center space-x-2">
@@ -232,11 +263,18 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
             </div>
 
             <div className="pt-4 border-t border-warmgray-200 space-y-3">
+              <Link
+                href="/"
+                target="_blank"
+                className="w-full flex items-center justify-center space-x-2 py-2.5 rounded-xl text-xs font-bold text-gold-800 bg-gold-50 border border-gold-300"
+              >
+                <span>Back to Website (Lush Layers) ↗</span>
+              </Link>
               <div className="flex items-center space-x-3 p-2 bg-cream-50 rounded-xl">
                 <ShieldCheck className="w-4 h-4 text-gold-600" />
                 <div className="overflow-hidden text-xs">
-                  <p className="font-bold text-charcoal-900 truncate">{user?.name || 'Tina Baidya'}</p>
-                  <p className="text-[10px] text-emerald-700 font-bold truncate">{user?.role || 'Founder & Admin'}</p>
+                  <p className="font-bold text-charcoal-900 truncate">{user?.name || 'Tina Manna'}</p>
+                  <p className="text-[10px] text-emerald-700 font-bold truncate">{user?.role || 'Owner & Master Chef'}</p>
                 </div>
               </div>
               <button
@@ -290,7 +328,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
             <Link
               href="/"
               target="_blank"
-              className="hidden sm:inline-flex items-center space-x-1 text-xs font-semibold text-warmgray-600 hover:text-gold-700 px-3 py-2 rounded-full border border-warmgray-300 bg-cream-50"
+              className="inline-flex items-center space-x-1 text-xs font-bold text-gold-800 hover:text-gold-700 px-3 py-2 rounded-full border border-gold-400 bg-gold-50 shadow-xs flex-shrink-0"
             >
               <span>Site ↗</span>
             </Link>

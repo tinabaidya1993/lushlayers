@@ -49,4 +49,10 @@ const CakeSchema: Schema = new Schema(
   { timestamps: true }
 );
 
+// Performance Compound Indexes for fast filter queries
+CakeSchema.index({ featured: 1, createdAt: -1 });
+CakeSchema.index({ bestseller: 1, createdAt: -1 });
+CakeSchema.index({ newArrival: 1, createdAt: -1 });
+CakeSchema.index({ category: 1, createdAt: -1 });
+
 export default mongoose.models.Cake || mongoose.model<ICake>('Cake', CakeSchema);

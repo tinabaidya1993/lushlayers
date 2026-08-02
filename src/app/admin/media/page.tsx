@@ -16,6 +16,7 @@ import {
   AlertCircle,
   FileCheck
 } from 'lucide-react';
+import { optimizeImageClientSide } from '@/lib/imageOptimizer';
 import { getOptimizedCloudinaryUrl } from '@/lib/cloudinaryClient';
 
 interface UploadItem {
@@ -98,8 +99,10 @@ export default function AdminMediaPage() {
     );
 
     try {
+      // Auto-compress and resize image client-side before upload
+      const optRes = await optimizeImageClientSide(item.file);
       const formData = new FormData();
-      formData.append('file', item.file);
+      formData.append('file', optRes.file);
 
       const res = await fetch('/api/upload', {
         method: 'POST',

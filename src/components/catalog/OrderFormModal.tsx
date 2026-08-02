@@ -2,8 +2,10 @@
 
 import React, { useState, useEffect } from 'react';
 import Image from 'next/image';
-import { X, Sparkles, MessageCircle, CheckCircle2, Upload, Check } from 'lucide-react';
-import { CakeItem } from '@/types';
+import { X, Sparkles, MessageCircle, CheckCircle2 } from 'lucide-react';
+import { CakeItem, OrderFormDetails } from '@/types';
+import { buildOnePageOrderWhatsAppUrl } from '@/lib/whatsapp';
+import { useScrollLock } from '@/hooks/useScrollLock';
 
 interface OrderFormModalProps {
   cake: CakeItem | null;
@@ -24,28 +26,17 @@ export default function OrderFormModal({
   selectedShape,
   onClose,
 }: OrderFormModalProps) {
-  // Lock background body scroll when order modal is active
-  useEffect(() => {
-    if (cake) {
-      document.body.style.overflow = 'hidden';
-    } else {
-      document.body.style.overflow = 'auto';
-    }
-    return () => {
-      document.body.style.overflow = 'auto';
-    };
-  }, [cake]);
-
-  if (!cake) return null;
+  // Global Scroll Lock when order modal is active
+  useScrollLock(Boolean(cake));
 
   const defaultWeight = selectedWeightOption || {
     weightKg: 1.5,
-    label: selectedWeightLabel || cake.servings,
-    price: selectedPrice || cake.priceStartingFrom,
+    label: selectedWeightLabel || (cake?.weightOptions && cake.weightOptions[0] ? cake.weightOptions[0].label : cake?.servings || '1.5 kg'),
+    price: selectedPrice || (cake?.weightOptions && cake.weightOptions[0] ? cake.weightOptions[0].price : cake?.priceStartingFrom || 1500),
   };
 
   const [weight, setWeight] = useState(defaultWeight);
-  const [flavor, setFlavor] = useState(selectedFlavor || cake.flavors[0] || 'Signature Vanilla Bean');
+  const [flavor, setFlavor] = useState(selectedFlavor || (cake?.flavors && cake.flavors[0] ? cake.flavors[0] : 'Signature Vanilla Bean'));
   const [shape, setShape] = useState(selectedShape || 'Classic Round');
   const [creamType, setCreamType] = useState('Swiss Meringue Buttercream');
   const [themeColor, setThemeColor] = useState('Ivory & Gold Leaf');
@@ -59,45 +50,95 @@ export default function OrderFormModal({
   const [cakeMessage, setCakeMessage] = useState('');
   const [specialNotes, setSpecialNotes] = useState('');
 
-  // Image Upload
-  const [referenceImageUrl, setReferenceImageUrl] = useState('');
-  const [uploadingImage, setUploadingImage] = useState(false);
-
   // Flow & State
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [orderSuccess, setOrderSuccess] = useState<{ orderId: string; whatsappUrl: string } | null>(null);
 
+  // Celebration Add-on Accessories — fetched live from Admin Settings
+  const [selectedAccessories, setSelectedAccessories] = useState<{ id: string; name: string; price: number }[]>([]);
+  const [celebrationAccessoriesList, setCelebrationAccessoriesList] = useState<
+    { id: string; name: string; emoji: string; price: number }[]
+  >([
+    { id: 'candles', name: 'Birthday Candles Pack', emoji: '🎂', price: 50 },
+    { id: 'knife', name: 'Premium Cake Knife / Server', emoji: '🔪', price: 40 },
+    { id: 'balloons', name: 'Party Balloons (Pack of 5)', emoji: '🎈', price: 100 },
+    { id: 'sparklers', name: 'Golden Party Sparklers (Pack of 2)', emoji: '💖', price: 80 },
+    { id: 'crown', name: 'Birthday Crown / Sash', emoji: '👑', price: 120 },
+  ]);
+
+  // Keep state in sync if props change
+  useEffect(() => {
+    if (cake) {
+      const defaultW = selectedWeightOption || {
+        weightKg: 1.5,
+        label: selectedWeightLabel || (cake.weightOptions && cake.weightOptions[0] ? cake.weightOptions[0].label : cake?.servings || '1.5 kg'),
+        price: selectedPrice || (cake.weightOptions && cake.weightOptions[0] ? cake.weightOptions[0].price : cake?.priceStartingFrom || 1500),
+      };
+      setWeight(defaultW);
+      setFlavor(selectedFlavor || (cake.flavors && cake.flavors[0] ? cake.flavors[0] : 'Signature Vanilla Bean'));
+      setShape(selectedShape || 'Classic Round');
+    }
+  }, [cake, selectedWeightLabel, selectedPrice, selectedFlavor, selectedShape, selectedWeightOption]);
+
+  // Fetch live accessories from admin settings
+  useEffect(() => {
+    fetch('/api/settings')
+      .then((res) => res.json())
+      .then((data) => {
+        if (data.success && data.settings?.accessories?.length > 0) {
+          const active = data.settings.accessories.filter((a: any) => a.active !== false);
+          if (active.length > 0) setCelebrationAccessoriesList(active);
+        }
+      })
+      .catch(() => {}); // silent fallback to defaults
+  }, []);
+
+  if (!cake) return null;
+
   // Form Validation
   const isValid = customerName.trim().length >= 2 && phoneNumber.trim().length >= 8 && deliveryAddress.trim().length >= 5;
 
-  const handleReferenceUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    if (!e.target.files || !e.target.files[0]) return;
-    const file = e.target.files[0];
-
-    try {
-      setUploadingImage(true);
-      const formData = new FormData();
-      formData.append('file', file);
-
-      const res = await fetch('/api/upload', {
-        method: 'POST',
-        body: formData,
-      });
-      const data = await res.json();
-
-      if (data.success && data.images?.[0]) {
-        setReferenceImageUrl(data.images[0].secure_url || data.images[0].url);
-      }
-    } catch (err) {
-      alert('Failed to upload reference image');
-    } finally {
-      setUploadingImage(false);
-    }
+  const toggleAccessory = (acc: { id: string; name: string; price: number }) => {
+    setSelectedAccessories((prev) =>
+      prev.some((item) => item.id === acc.id)
+        ? prev.filter((item) => item.id !== acc.id)
+        : [...prev, acc]
+    );
   };
+
+  const basePrice = weight?.price || selectedPrice || cake?.priceStartingFrom || 1500;
+  const accessoriesTotal = selectedAccessories.reduce((sum, item) => sum + item.price, 0);
+  const currentPrice = basePrice + accessoriesTotal;
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!isValid) return;
+
+    const generatedOrderId = `LL-${Date.now().toString().slice(-6)}`;
+    const currentWeightLabel = weight?.label || selectedWeightLabel || cake?.servings || '1.5 kg';
+
+    const orderDetails: OrderFormDetails = {
+      customerName,
+      phoneNumber,
+      deliveryAddress,
+      deliveryDate: deliveryDate || 'Preferred Date TBD',
+      deliveryTime,
+      cakeName: cake.name,
+      cakeCategory: cake.category,
+      cakeImageUrl: cake.image,
+      selectedWeight: currentWeightLabel,
+      selectedPrice: currentPrice,
+      selectedFlavor: flavor,
+      selectedShape: shape,
+      selectedCreamType: creamType,
+      selectedThemeColor: themeColor,
+      cakeMessage: cakeMessage || 'None',
+      selectedAccessories,
+      specialNotes: specialNotes || 'None',
+      eggless: cake.eggless,
+    };
+
+    const directWhatsAppUrl = buildOnePageOrderWhatsAppUrl(orderDetails);
 
     try {
       setIsSubmitting(true);
@@ -116,15 +157,14 @@ export default function OrderFormModal({
           cakeCategory: cake.category,
           image: cake.image,
         },
-        weight: weight.label,
+        weight: currentWeightLabel,
         flavor,
-        estimatedPrice: weight.price,
+        estimatedPrice: currentPrice,
         selectedOptions: {
           shape,
           creamType,
           themeColor,
           cakeMessage,
-          referenceImageUrl,
           specialNotes,
         },
       };
@@ -139,14 +179,22 @@ export default function OrderFormModal({
 
       if (data.success) {
         setOrderSuccess({
-          orderId: data.orderId,
-          whatsappUrl: data.whatsappUrl,
+          orderId: data.orderId || generatedOrderId,
+          whatsappUrl: data.whatsappUrl || directWhatsAppUrl,
         });
       } else {
-        throw new Error(data.error || 'Failed to submit order');
+        // DB save fallback: still show order success with direct WhatsApp URL
+        setOrderSuccess({
+          orderId: generatedOrderId,
+          whatsappUrl: directWhatsAppUrl,
+        });
       }
     } catch (err: any) {
-      alert(`Error submitting order: ${err.message}`);
+      // Offline/Network fallback: guarantee order flow works smoothly
+      setOrderSuccess({
+        orderId: generatedOrderId,
+        whatsappUrl: directWhatsAppUrl,
+      });
     } finally {
       setIsSubmitting(false);
     }
@@ -154,7 +202,7 @@ export default function OrderFormModal({
 
   return (
     <div className="fixed inset-0 z-[1000] bg-charcoal-900/75 backdrop-blur-md flex items-center justify-center p-3 sm:p-4 overflow-hidden">
-      <div className="bg-white w-full max-w-2xl rounded-3xl p-5 sm:p-7 shadow-2xl border border-warmgray-200 space-y-5 my-auto max-h-[90vh] overflow-y-auto text-xs text-charcoal-900 animate-fade-in relative">
+      <div className="bg-white w-full max-w-2xl rounded-3xl p-5 sm:p-7 shadow-2xl border border-warmgray-200 space-y-5 my-auto max-h-[90vh] overflow-y-auto text-xs text-charcoal-900 animate-fade-in relative scroll-lock-overlay">
         
         {/* Close Button */}
         <button
@@ -222,12 +270,12 @@ export default function OrderFormModal({
                 </div>
                 <div>
                   <h4 className="font-serif font-bold text-sm text-charcoal-900">{cake.name}</h4>
-                  <span className="text-[11px] text-warmgray-500">{weight.label}</span>
+                  <span className="text-[11px] text-warmgray-500">{weight?.label || cake?.servings}</span>
                 </div>
               </div>
               <div className="text-right">
                 <span className="text-[10px] uppercase tracking-wider text-warmgray-500 block">Estimated Price</span>
-                <span className="font-serif text-lg font-bold text-gold-700">₹{weight.price.toLocaleString()}</span>
+                <span className="font-serif text-lg font-bold text-gold-700">₹{(weight?.price || cake?.priceStartingFrom || 0).toLocaleString()}</span>
               </div>
             </div>
 
@@ -299,19 +347,19 @@ export default function OrderFormModal({
                   <div>
                     <label className="block font-bold text-warmgray-700 mb-1">Weight / Servings</label>
                     <select
-                      value={weight.label}
+                      value={weight?.label || ''}
                       onChange={(e) => {
                         const opt = cake.weightOptions?.find((w) => w.label === e.target.value);
                         if (opt) setWeight(opt);
-                        else setWeight({ weightKg: 1.5, label: e.target.value, price: weight.price });
+                        else setWeight({ weightKg: 1.5, label: e.target.value, price: weight?.price || cake?.priceStartingFrom || 1500 });
                       }}
                       className="w-full px-3 py-2 rounded-xl border border-warmgray-300 font-bold text-charcoal-900 focus:border-gold-500 focus:outline-none text-xs"
                     >
                       {cake.weightOptions?.map((w, idx) => (
                         <option key={idx} value={w.label}>
-                          {w.label} — ₹{w.price.toLocaleString()}
+                          {w.label} — ₹{(w.price || 0).toLocaleString()}
                         </option>
-                      )) || <option value={weight.label}>{weight.label} — ₹{weight.price.toLocaleString()}</option>}
+                      )) || <option value={weight?.label}>{weight?.label} — ₹{(weight?.price || 0).toLocaleString()}</option>}
                     </select>
                   </div>
 
@@ -367,20 +415,37 @@ export default function OrderFormModal({
                   />
                 </div>
 
-                {/* Upload Reference Image */}
+                {/* Celebration Add-on Accessories */}
                 <div>
-                  <label className="block font-bold text-warmgray-700 mb-1">Upload Reference Image (Cloudinary)</label>
-                  <div className="flex items-center space-x-3">
-                    <label className="px-3.5 py-2 rounded-xl border border-gold-500 text-gold-700 font-bold bg-gold-50 hover:bg-gold-500 hover:text-white transition-all cursor-pointer inline-flex items-center space-x-2 text-xs">
-                      <Upload className="w-3.5 h-3.5" />
-                      <span>{uploadingImage ? 'Uploading to CDN...' : 'Choose File'}</span>
-                      <input type="file" accept="image/*" onChange={handleReferenceUpload} className="hidden" />
-                    </label>
-                    {referenceImageUrl && (
-                      <span className="text-[10px] text-emerald-600 font-bold flex items-center">
-                        <Check className="w-3 h-3 mr-1" /> Reference Uploaded!
-                      </span>
-                    )}
+                  <label className="block font-bold text-warmgray-700 mb-1.5">
+                    Celebration Add-on Accessories (Optional)
+                  </label>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                    {celebrationAccessoriesList.map((acc) => {
+                      const isSelected = selectedAccessories.some((a) => a.id === acc.id);
+                      return (
+                        <label
+                          key={acc.id}
+                          onClick={() => toggleAccessory(acc)}
+                          className={`p-2.5 rounded-xl border text-xs font-semibold flex items-center justify-between cursor-pointer transition-all ${
+                            isSelected
+                              ? 'bg-gold-50 border-gold-500 text-charcoal-900 shadow-xs'
+                              : 'bg-cream-50 border-warmgray-200 text-warmgray-600 hover:border-warmgray-300'
+                          }`}
+                        >
+                          <div className="flex items-center space-x-2">
+                            <input
+                              type="checkbox"
+                              checked={isSelected}
+                              onChange={() => {}}
+                              className="accent-gold-600 rounded"
+                            />
+                            <span>{(acc as any).emoji && <span className="mr-1">{(acc as any).emoji}</span>}{acc.name}</span>
+                          </div>
+                          <span className="font-bold text-gold-700">+₹{acc.price}</span>
+                        </label>
+                      );
+                    })}
                   </div>
                 </div>
               </div>
@@ -388,8 +453,8 @@ export default function OrderFormModal({
               {/* Submit Action */}
               <div className="pt-3 border-t border-warmgray-200 flex flex-col sm:flex-row justify-between items-center gap-3">
                 <div className="text-left w-full sm:w-auto">
-                  <span className="text-[10px] text-warmgray-500 uppercase tracking-wider block font-semibold">Total Estimated</span>
-                  <span className="font-serif text-2xl font-bold text-gold-700">₹{weight.price.toLocaleString()}</span>
+                  <span className="text-[10px] text-warmgray-500 uppercase tracking-wider block font-semibold">Total Order Price</span>
+                  <span className="font-serif text-2xl font-bold text-gold-700">₹{(currentPrice || 0).toLocaleString()}</span>
                 </div>
 
                 <button

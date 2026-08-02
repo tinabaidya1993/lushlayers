@@ -3,14 +3,43 @@
 import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
-import { usePathname } from 'next/navigation';
+import { usePathname, useRouter } from 'next/navigation';
 import { Menu, X, Sparkles, MessageCircle, Phone, MapPin, Clock, Search } from 'lucide-react';
 import { buildGeneralInquiryWhatsAppUrl } from '@/lib/whatsapp';
+import { useScrollLock } from '@/hooks/useScrollLock';
 
 export default function Navbar() {
   const [scrolled, setScrolled] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const pathname = usePathname();
+  const router = useRouter();
+
+  // Global Scroll Lock when mobile menu is active
+  useScrollLock(mobileMenuOpen);
+
+  // 3 Fast Clicks on Logo to Open Admin Panel
+  const [clickCount, setClickCount] = useState<number>(0);
+
+  const handleLogoTripleClick = (e: React.MouseEvent) => {
+    setClickCount((prev) => {
+      const nextCount = prev + 1;
+      if (nextCount >= 3) {
+        e.preventDefault();
+        router.push('/admin');
+        return 0;
+      }
+      return nextCount;
+    });
+  };
+
+  useEffect(() => {
+    if (clickCount > 0) {
+      const timer = setTimeout(() => {
+        setClickCount(0);
+      }, 800);
+      return () => clearTimeout(timer);
+    }
+  }, [clickCount]);
 
   useEffect(() => {
     const handleScroll = () => {
@@ -23,18 +52,6 @@ export default function Navbar() {
     window.addEventListener('scroll', handleScroll);
     return () => window.removeEventListener('scroll', handleScroll);
   }, []);
-
-  // Lock scroll when mobile menu is active
-  useEffect(() => {
-    if (mobileMenuOpen) {
-      document.body.style.overflow = 'hidden';
-    } else {
-      document.body.style.overflow = 'auto';
-    }
-    return () => {
-      document.body.style.overflow = 'auto';
-    };
-  }, [mobileMenuOpen]);
 
   const navLinks = [
     { name: 'Home', href: '/' },
@@ -59,8 +76,12 @@ export default function Navbar() {
         <div className="max-w-7xl mx-auto px-3 sm:px-6 lg:px-8">
           <div className="flex items-center justify-between gap-2">
             
-            {/* Brand Logo & Title */}
-            <Link href="/" className="group flex items-center space-x-2 focus:outline-none flex-shrink-0">
+            {/* Brand Logo & Title (3 Fast Clicks Triggers Admin Panel) */}
+            <Link
+              href="/"
+              onClick={handleLogoTripleClick}
+              className="group flex items-center space-x-2 focus:outline-none flex-shrink-0 cursor-pointer"
+            >
               <div className="relative w-9 h-9 sm:w-10 sm:h-10 rounded-full overflow-hidden border-2 border-gold-500/40 shadow-sm group-hover:scale-105 transition-transform flex-shrink-0 bg-charcoal-900">
                 <Image
                   src="/logo.jpg"
@@ -162,7 +183,7 @@ export default function Navbar() {
 
       {/* FAILSAFE FIXED MOBILE & TABLET DROPDOWN MENU CONTAINER */}
       {mobileMenuOpen && (
-        <div className="fixed inset-x-0 top-[60px] sm:top-[64px] z-[999] bg-white border-b border-warmgray-300 shadow-2xl animate-fade-in lg:hidden overflow-y-auto max-h-[calc(100vh-64px)]">
+        <div className="fixed inset-x-0 top-[60px] sm:top-[64px] z-[999] bg-white border-b border-warmgray-300 shadow-2xl animate-fade-in lg:hidden overflow-y-auto max-h-[calc(100vh-64px)] scroll-lock-overlay">
           <div className="max-w-4xl mx-auto px-4 py-5 space-y-4 bg-white text-charcoal-900">
             
             {/* Header Title inside Dropdown */}

@@ -1,255 +1,141 @@
 import { CakeItem, CategoryInfo } from '@/types';
 
 export const CATEGORIES: CategoryInfo[] = [
+  // 🎂 Celebration Cakes
   {
-    id: 'wedding',
-    name: 'Grand Wedding Tiered Cakes',
-    tagline: 'Architectural Elegance for Your Special Day',
-    description: 'Multi-tiered masterpieces crafted with fine Belgian chocolate, edible 24k gold leafing, handcrafted sugar blooms, and silk finishes.',
-    heroImage: 'https://images.unsplash.com/photo-1535141192574-5d4897c13136?auto=format&fit=crop&w=1200&q=80',
-    badge: 'Couture Collection'
-  },
-  {
-    id: 'signature',
-    name: 'Lush Signature Creations',
-    tagline: 'Decadent Flavors, Unrivaled Craftsmanship',
-    description: 'Our head cake artist’s flagship designs featuring velvet textures, Madagascar vanilla bean, berries, and gold accents.',
-    heroImage: 'https://images.unsplash.com/photo-1578985545062-69928b1d9587?auto=format&fit=crop&w=1200&q=80',
+    id: 'birthday-cakes',
+    name: 'Birthday Cakes',
+    group: 'Celebration Cakes',
+    tagline: 'Make Birthday Milestones Magical',
+    description: 'Customized birthday cakes with delightful flavors, pastel palettes, and personalized plaques.',
+    heroImage: 'https://images.unsplash.com/photo-1565958011703-44f9829ba187?auto=format&fit=crop&w=1200&q=80',
     badge: 'Bestseller'
   },
   {
-    id: 'birthday',
-    name: 'Celebration & Birthday',
-    tagline: 'Make Every Milestone Unforgettable',
-    description: 'Contemporary minimalist cake designs infused with playful luxury, pastel palettes, champagne sponge, and customized cake plaques.',
-    heroImage: 'https://images.unsplash.com/photo-1565958011703-44f9829ba187?auto=format&fit=crop&w=1200&q=80',
-    badge: 'Most Popular'
+    id: 'anniversary-cakes',
+    name: 'Anniversary Cakes',
+    group: 'Celebration Cakes',
+    tagline: 'Celebrate Years of Love & Togetherness',
+    description: 'Romantic heart-shaped and metallic accent cakes designed for couples and anniversary milestones.',
+    heroImage: 'https://images.unsplash.com/photo-1535141192574-5d4897c13136?auto=format&fit=crop&w=1200&q=80',
+    badge: 'Romantic'
   },
   {
-    id: 'artisanal',
-    name: 'Artisanal & Modern Minimal',
-    tagline: 'Sculptural Aesthetic Meets Fine Baking',
-    description: 'Textured buttercream strokes, organic dried floral arrangements, geometric deckings, and dark chocolate ganache drips.',
+    id: 'wedding-cakes',
+    name: 'Wedding Cakes',
+    group: 'Celebration Cakes',
+    tagline: 'Grand Tiered Masterpieces for Your Special Day',
+    description: 'Multi-tiered luxury wedding cakes adorned with fine Belgian chocolate, 24k gold leafing, and handcrafted sugar blooms.',
+    heroImage: 'https://images.unsplash.com/photo-1519869325930-281384150729?auto=format&fit=crop&w=1200&q=80',
+    badge: 'Grand Tier'
+  },
+  {
+    id: 'baby-shower-cakes',
+    name: 'Baby Shower Cakes',
+    group: 'Celebration Cakes',
+    tagline: 'Sweet Welcome for the Little One',
+    description: 'Whimsical pastel cakes, gender reveal designs, and adorable handcrafted fondant decorations.',
     heroImage: 'https://images.unsplash.com/photo-1588195538326-c5b1e9f80a1b?auto=format&fit=crop&w=1200&q=80',
-    badge: 'Architectural'
+    badge: 'Pastel'
   },
   {
-    id: 'vegan',
-    name: 'Plant-Based & Guilt-Free Luxury',
-    tagline: 'Zero Compromise on Texture or Flavor',
-    description: 'Organic coconut cream, almond flour sponges, raw cocoa ganache, and berry coulis crafted for refined dietary preferences.',
+    id: 'annaprashan-cakes',
+    name: 'Rice Feeding Ceremony (Annaprashan) Cakes',
+    group: 'Celebration Cakes',
+    tagline: 'Traditional & Blessings Infused First Rice Ceremony Cakes',
+    description: 'Cultural themed cakes with traditional rice feeding motifs and golden touches for baby\'s first rice ceremony.',
+    heroImage: 'https://images.unsplash.com/photo-1578985545062-69928b1d9587?auto=format&fit=crop&w=1200&q=80',
+    badge: 'Traditional'
+  },
+  {
+    id: 'engagement-cakes',
+    name: 'Ring Ceremony / Engagement Cakes',
+    group: 'Celebration Cakes',
+    tagline: 'Elegant Creations for Your Engagement Day',
+    description: 'Classy ring box cakes, edible pearl decorations, and minimalist satin frosting finishes.',
+    heroImage: 'https://images.unsplash.com/photo-1562440499-64c9a111f713?auto=format&fit=crop&w=1200&q=80',
+    badge: 'Elegance'
+  },
+  {
+    id: 'bhai-dooj-cakes',
+    name: 'Bhai Dooj Celebration Cakes',
+    group: 'Celebration Cakes',
+    tagline: 'Honoring the Special Sibling Bond',
+    description: 'Festive sibling celebration cakes crafted with rich chocolate, dry fruits, and festive motifs.',
     heroImage: 'https://images.unsplash.com/photo-1606890737304-57a1ca8a5b62?auto=format&fit=crop&w=1200&q=80',
-    badge: 'Organic & Vegan'
+    badge: 'Festive'
+  },
+  {
+    id: 'valentines-couple-cakes',
+    name: 'Valentine\'s Day & Couple Celebration Cakes',
+    group: 'Celebration Cakes',
+    tagline: 'Romantic & Heartfelt Delight for Couples',
+    description: 'Red velvet, dark chocolate truffle, and strawberry rose cakes with romantic finishes.',
+    heroImage: 'https://images.unsplash.com/photo-1578985545062-69928b1d9587?auto=format&fit=crop&w=1200&q=80',
+    badge: 'Love & Romance'
+  },
+  {
+    id: 'rakhi-special-cakes',
+    name: 'Rakhi Special Cakes',
+    group: 'Celebration Cakes',
+    tagline: 'Sweeten the Festival of Protection & Love',
+    description: 'Special Raksha Bandhan cakes with handcrafted rakhi fondant toppers and festive flavors.',
+    heroImage: 'https://images.unsplash.com/photo-1535141192574-5d4897c13136?auto=format&fit=crop&w=1200&q=80',
+    badge: 'Festive'
+  },
+
+  // 🎉 Special Occasion Cakes
+  {
+    id: 'any-day-celebration-cakes',
+    name: 'Any Day Celebration Cakes',
+    group: 'Special Occasion Cakes',
+    tagline: 'Independence, Children\'s, Father\'s, Mother\'s & Friendship Day Special Cakes',
+    description: 'Themed cakes for year-round special days like Independence Day, Children\'s Day, Father\'s Day, Mother\'s Day, and Friendship Day.',
+    heroImage: 'https://images.unsplash.com/photo-1565958011703-44f9829ba187?auto=format&fit=crop&w=1200&q=80',
+    badge: 'Multi-Occasion',
+    subcategories: ['Independence Day', "Children's Day", "Father's Day", "Mother's Day", 'Friendship Day']
+  },
+  {
+    id: 'farewell-success-cakes',
+    name: 'Farewell & Success Party Cakes',
+    group: 'Special Occasion Cakes',
+    tagline: 'Cheers to New Beginnings and Remarkable Success',
+    description: 'Corporate achievement, graduation, job promotion, and farewell custom message cakes.',
+    heroImage: 'https://images.unsplash.com/photo-1588195538326-c5b1e9f80a1b?auto=format&fit=crop&w=1200&q=80',
+    badge: 'Success'
+  },
+
+  // 🍰 Signature Collection
+  {
+    id: 'bento-message-cakes',
+    name: 'Mini Bento Cakes & Message Inside Cakes',
+    group: 'Signature Collection',
+    tagline: 'Cute Bento Box & Hidden Message Surprise Cakes',
+    description: 'Adorable 250g-350g Korean bento cakes and secret pull-out message surprise cakes.',
+    heroImage: 'https://images.unsplash.com/photo-1535141192574-5d4897c13136?auto=format&fit=crop&w=1200&q=80',
+    badge: 'Trending'
+  },
+  {
+    id: 'premium-tub-cakes',
+    name: 'Premium Tub Cakes',
+    group: 'Signature Collection',
+    tagline: 'Decadent Spoonfuls of Gourmet Layers in a Tub',
+    description: 'Rich layered chocolate, tiramisu, and lotus biscoff dessert tubs ready for instant enjoyment.',
+    heroImage: 'https://images.unsplash.com/photo-1578985545062-69928b1d9587?auto=format&fit=crop&w=1200&q=80',
+    badge: 'Gourmet Tubs'
+  },
+  {
+    id: 'pastries',
+    name: 'Pastries',
+    group: 'Signature Collection',
+    tagline: 'Single-Serve Artisanal Slice Delights',
+    description: 'Freshly baked single-serve pastry slices featuring Belgian chocolate, cheesecake, and fruit tarts.',
+    heroImage: 'https://images.unsplash.com/photo-1606890737304-57a1ca8a5b62?auto=format&fit=crop&w=1200&q=80',
+    badge: 'Single Slices'
   }
 ];
 
-export const CAKES_DATA: CakeItem[] = [
-  {
-    id: 'aurora-wedding-tier',
-    name: 'The Golden Aurora Tier',
-    subtitle: '3-Tiered Wedding Masterpiece',
-    category: 'wedding',
-    priceStartingFrom: 18500,
-    description: 'An architectural 3-tiered wedding cake draped in soft ivory Swiss meringue buttercream, embellished with hand-painted 24K gold foil details and delicate white sugar gardenias.',
-    shortDescription: '3-Tiered ivory wedding cake adorned with 24k gold leafing and sugar florals.',
-    image: 'https://images.unsplash.com/photo-1535141192574-5d4897c13136?auto=format&fit=crop&w=1200&q=80',
-    additionalImages: [
-      'https://images.unsplash.com/photo-1562440499-64c9a111f713?auto=format&fit=crop&w=1000&q=80',
-      'https://images.unsplash.com/photo-1519869325930-281384150729?auto=format&fit=crop&w=1000&q=80'
-    ],
-    servings: '60 - 80 Guests (3 Tiers / 5 kg)',
-    weightOptions: [
-      { weightKg: 3, label: '3 kg (40-50 Guests)', price: 18500 },
-      { weightKg: 5, label: '5 kg (60-80 Guests)', price: 28000 },
-      { weightKg: 8, label: '8 kg (100-120 Guests)', price: 42000 },
-    ],
-    flavors: ['Madagascar Vanilla Bean & Raspberry Coulis', 'Belgian Dark Chocolate Ganache'],
-    eggless: true,
-    bestseller: true,
-    newArrival: false,
-    featured: true,
-    tags: ['Wedding', '24K Gold', 'Multi-Tier', 'Luxury', 'Eggless'],
-    customizable: true,
-    prepTimeHours: 48,
-    availabilityStatus: '48 Hours Advance'
-  },
-  {
-    id: 'velvet-noir-truffle',
-    name: 'Velvet Noir Truffle',
-    subtitle: '70% Valrhona Dark Chocolate Cake',
-    category: 'signature',
-    priceStartingFrom: 4800,
-    description: 'Rich dark chocolate cake layers soaked in espresso syrup, filled with silky Valrhona chocolate mousse, and crowned with fresh organic blackberries and edible gold dust.',
-    shortDescription: 'Decadent 70% dark chocolate sponge with espresso infusion and berry garnishes.',
-    image: 'https://images.unsplash.com/photo-1578985545062-69928b1d9587?auto=format&fit=crop&w=1200&q=80',
-    additionalImages: [
-      'https://images.unsplash.com/photo-1606890737304-57a1ca8a5b62?auto=format&fit=crop&w=1000&q=80'
-    ],
-    servings: '12 - 16 Guests (1.5 kg)',
-    weightOptions: [
-      { weightKg: 1, label: '1 kg (8-10 Guests)', price: 3400 },
-      { weightKg: 1.5, label: '1.5 kg (12-16 Guests)', price: 4800 },
-      { weightKg: 2, label: '2 kg (18-22 Guests)', price: 6200 },
-    ],
-    flavors: ['70% Dark Chocolate Mousse', 'Espresso Salted Caramel'],
-    eggless: true,
-    bestseller: true,
-    newArrival: false,
-    featured: true,
-    tags: ['Signature', 'Dark Chocolate', 'Gourmet', 'Eggless'],
-    customizable: true,
-    prepTimeHours: 24,
-    availabilityStatus: '24 Hours Advance'
-  },
-  {
-    id: 'rose-champagne-bliss',
-    name: 'Rosé Champagne & Pistachio',
-    subtitle: 'Contemporary Birthday Elegance',
-    category: 'birthday',
-    priceStartingFrom: 5200,
-    description: 'Moist rosé champagne infused sponge, paired with Iranian pistachio praline paste and layered with velvety white chocolate whipped cream.',
-    shortDescription: 'Rosé champagne infused sponge with roasted pistachio praline and rose petals.',
-    image: 'https://images.unsplash.com/photo-1565958011703-44f9829ba187?auto=format&fit=crop&w=1200&q=80',
-    servings: '10 - 14 Guests (1.5 kg)',
-    weightOptions: [
-      { weightKg: 1, label: '1 kg (8-10 Guests)', price: 3600 },
-      { weightKg: 1.5, label: '1.5 kg (10-14 Guests)', price: 5200 },
-      { weightKg: 2, label: '2 kg (15-20 Guests)', price: 6800 },
-    ],
-    flavors: ['Rosé Champagne', 'Pistachio Praline', 'White Chocolate'],
-    eggless: false,
-    bestseller: false,
-    newArrival: true,
-    featured: true,
-    tags: ['Birthday', 'Celebration', 'Champagne', 'Pistachio'],
-    customizable: true,
-    prepTimeHours: 24,
-    availabilityStatus: '24 Hours Advance'
-  },
-  {
-    id: 'minimalist-concrete-flora',
-    name: 'Minimalist Stone & Flora',
-    subtitle: 'Artisanal Concrete Texture Finish',
-    category: 'artisanal',
-    priceStartingFrom: 5500,
-    description: 'A striking modern cake featuring textured concrete-style charcoal and cream buttercream palette, complemented with dried white pampas grass and eucalyptus.',
-    shortDescription: 'Modern sculptural cake with concrete buttercream texture and dried botanicals.',
-    image: 'https://images.unsplash.com/photo-1588195538326-c5b1e9f80a1b?auto=format&fit=crop&w=1200&q=80',
-    servings: '15 - 20 Guests (2 kg)',
-    weightOptions: [
-      { weightKg: 1.5, label: '1.5 kg (10-14 Guests)', price: 4200 },
-      { weightKg: 2, label: '2 kg (15-20 Guests)', price: 5500 },
-      { weightKg: 3, label: '3 kg (25-30 Guests)', price: 7900 },
-    ],
-    flavors: ['Earl Grey & Lavender', 'Lemon Curd & Vanilla Bean'],
-    eggless: true,
-    bestseller: false,
-    newArrival: true,
-    featured: true,
-    tags: ['Artisanal', 'Minimalist', 'Botanical', 'Eggless'],
-    customizable: true,
-    prepTimeHours: 24,
-    availabilityStatus: '24 Hours Advance'
-  },
-  {
-    id: 'berry-chiffon-velour',
-    name: 'Wild Berry Chiffon Velour',
-    subtitle: 'Fresh Berry Harvest',
-    category: 'signature',
-    priceStartingFrom: 4200,
-    description: 'Feather-light vanilla bean chiffon layered with house-made wild berry compote, mascarpone cream, and topped with fresh strawberries, raspberries, and edible violets.',
-    shortDescription: 'Light vanilla chiffon cake filled with wild berry compote and mascarpone.',
-    image: 'https://images.unsplash.com/photo-1535141192574-5d4897c13136?auto=format&fit=crop&w=1200&q=80',
-    servings: '10 - 12 Guests (1.2 kg)',
-    weightOptions: [
-      { weightKg: 1, label: '1 kg (8-10 Guests)', price: 3400 },
-      { weightKg: 1.5, label: '1.5 kg (12-15 Guests)', price: 4800 },
-    ],
-    flavors: ['Mascarpone Berry', 'Vanilla Bean Chiffon'],
-    eggless: true,
-    bestseller: true,
-    newArrival: false,
-    featured: false,
-    tags: ['Fresh Fruit', 'Berry', 'Light', 'Eggless'],
-    customizable: true,
-    prepTimeHours: 12,
-    availabilityStatus: 'Available Today'
-  },
-  {
-    id: 'vegan-salted-caramel-pecan',
-    name: 'Vegan Salted Caramel & Pecan',
-    subtitle: '100% Organic Plant-Based Luxury',
-    category: 'vegan',
-    priceStartingFrom: 4600,
-    description: 'Gluten-free almond and oat flour sponge drizzled with artisanal coconut milk salted caramel and sprinkled with toasted pecans and sea salt flakes.',
-    shortDescription: 'Gluten-free almond cake with homemade coconut salted caramel and pecans.',
-    image: 'https://images.unsplash.com/photo-1606890737304-57a1ca8a5b62?auto=format&fit=crop&w=1200&q=80',
-    servings: '12 - 15 Guests (1.5 kg)',
-    weightOptions: [
-      { weightKg: 1, label: '1 kg (8-10 Guests)', price: 3200 },
-      { weightKg: 1.5, label: '1.5 kg (12-15 Guests)', price: 4600 },
-      { weightKg: 2, label: '2 kg (16-20 Guests)', price: 5900 },
-    ],
-    flavors: ['Coconut Salted Caramel', 'Toasted Pecan Almond Sponge'],
-    eggless: true,
-    bestseller: false,
-    newArrival: true,
-    featured: true,
-    tags: ['Vegan', 'Gluten-Free', 'Plant-Based', 'Organic', 'Eggless'],
-    customizable: true,
-    prepTimeHours: 24,
-    availabilityStatus: '24 Hours Advance'
-  },
-  {
-    id: 'pearl-monogram-crown',
-    name: 'The Pearl Monogram Crown',
-    subtitle: 'Custom Luxury Celebration Cake',
-    category: 'birthday',
-    priceStartingFrom: 6500,
-    description: 'Draped in lustrous pearlized buttercream with delicate hand-piped pearl borders, customized acrylic gold lettering plaque, and gold sugar pearls.',
-    shortDescription: 'Lustrous pearlized celebration cake with custom monogram acrylic plaque.',
-    image: 'https://images.unsplash.com/photo-1519869325930-281384150729?auto=format&fit=crop&w=1200&q=80',
-    servings: '15 - 18 Guests (2 kg)',
-    weightOptions: [
-      { weightKg: 1.5, label: '1.5 kg (10-14 Guests)', price: 5000 },
-      { weightKg: 2, label: '2 kg (15-18 Guests)', price: 6500 },
-      { weightKg: 3, label: '3 kg (22-28 Guests)', price: 9200 },
-    ],
-    flavors: ['Hazelnut Praline', 'Dark Chocolate Ganache'],
-    eggless: true,
-    bestseller: false,
-    newArrival: false,
-    featured: false,
-    tags: ['Monogram', 'Pearl', 'Birthday', 'Custom', 'Eggless'],
-    customizable: true,
-    prepTimeHours: 24,
-    availabilityStatus: '24 Hours Advance'
-  },
-  {
-    id: 'botanical-botanica-wedding',
-    name: 'Botanica 2-Tier Garden Wedding',
-    subtitle: 'Semi-Naked Floral Elegance',
-    category: 'wedding',
-    priceStartingFrom: 13500,
-    description: 'A romantic semi-naked two-tiered cake showcasing delicate sponge texture, infused with elderflower cordial, whipped vanilla buttercream, and fresh organic garden roses.',
-    shortDescription: '2-Tier semi-naked cake infused with elderflower and organic fresh roses.',
-    image: 'https://images.unsplash.com/photo-1562440499-64c9a111f713?auto=format&fit=crop&w=1200&q=80',
-    servings: '35 - 45 Guests (2 Tiers / 3.5 kg)',
-    weightOptions: [
-      { weightKg: 3, label: '3 kg (30-40 Guests)', price: 13500 },
-      { weightKg: 5, label: '5 kg (50-70 Guests)', price: 21000 },
-    ],
-    flavors: ['Elderflower & Lemon', 'Vanilla Bean & Passionfruit'],
-    eggless: true,
-    bestseller: true,
-    newArrival: false,
-    featured: false,
-    tags: ['Wedding', 'Semi-Naked', 'Floral', 'Fresh Roses', 'Eggless'],
-    customizable: true,
-    prepTimeHours: 48,
-    availabilityStatus: '48 Hours Advance'
-  }
-];
+export const CAKES_DATA: CakeItem[] = [];
 
 export function getCakeById(id: string): CakeItem | undefined {
   return CAKES_DATA.find((cake) => cake.id === id);

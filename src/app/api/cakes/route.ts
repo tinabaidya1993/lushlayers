@@ -1,35 +1,52 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { revalidatePath } from 'next/cache';
 import { connectToDatabase } from '@/lib/db';
 import Cake from '@/models/Cake';
+import SiteSettings from '@/models/SiteSettings';
 import { CAKES_DATA } from '@/data/cakes';
+
+export const dynamic = 'force-dynamic';
+export const revalidate = 0;
 
 export async function GET(req: NextRequest) {
   try {
     await connectToDatabase();
-    
-    // Seed initial data if MongoDB database is empty
-    let cakes = await Cake.find({}).sort({ createdAt: -1 });
+
+    let cakes = await Cake.find({}).sort({ createdAt: -1 }).lean();
 
     if (!cakes || cakes.length === 0) {
       console.log('Seeding initial cakes data into MongoDB Atlas...');
       await Cake.insertMany(CAKES_DATA);
-      cakes = await Cake.find({}).sort({ createdAt: -1 });
+      cakes = await Cake.find({}).sort({ createdAt: -1 }).lean();
     }
 
-    return NextResponse.json({
-      success: true,
-      count: cakes.length,
-      cakes,
-    });
+    return NextResponse.json(
+      {
+        success: true,
+        count: cakes.length,
+        cakes,
+      },
+      {
+        headers: {
+          'Cache-Control': 'no-store, no-cache, must-revalidate, proxy-revalidate',
+        },
+      }
+    );
   } catch (error: any) {
-    console.error('MongoDB Atlas GET error:', error);
-    // Fallback to static CAKES_DATA if DB connection fails
-    return NextResponse.json({
-      success: true,
-      count: CAKES_DATA.length,
-      cakes: CAKES_DATA,
-      source: 'static_fallback',
-    });
+    console.error('MongoDB Atlas GET cakes error:', error);
+    return NextResponse.json(
+      {
+        success: true,
+        count: CAKES_DATA.length,
+        cakes: CAKES_DATA,
+        source: 'static_fallback',
+      },
+      {
+        headers: {
+          'Cache-Control': 'no-store, no-cache, must-revalidate, proxy-revalidate',
+        },
+      }
+    );
   }
 }
 
@@ -44,12 +61,19 @@ export async function POST(req: NextRequest) {
 
     const newCake = await Cake.create(body);
 
+    // On-Demand ISR Revalidation
+    try {
+      revalidatePath('/');
+      revalidatePath('/catalog');
+      revalidatePath(`/cake/${body.id}`);
+    } catch (e) {}
+
     return NextResponse.json({
       success: true,
       cake: newCake,
     });
   } catch (error: any) {
-    console.error('MongoDB Atlas POST error:', error);
+    console.error('MongoDB Atlas POST cake error:', error);
     return NextResponse.json({ error: error.message || 'Failed to save cake to MongoDB' }, { status: 500 });
   }
 }
@@ -68,12 +92,19 @@ export async function PUT(req: NextRequest) {
       upsert: true,
     });
 
+    // On-Demand ISR Revalidation
+    try {
+      revalidatePath('/');
+      revalidatePath('/catalog');
+      revalidatePath(`/cake/${body.id}`);
+    } catch (e) {}
+
     return NextResponse.json({
       success: true,
       cake: updatedCake,
     });
   } catch (error: any) {
-    console.error('MongoDB Atlas PUT error:', error);
+    console.error('MongoDB Atlas PUT cake error:', error);
     return NextResponse.json({ error: error.message || 'Failed to update cake in MongoDB' }, { status: 500 });
   }
 }
@@ -88,13 +119,23 @@ export async function DELETE(req: NextRequest) {
       return NextResponse.json({ error: 'Cake ID is required' }, { status: 400 });
     }
 
-    await Cake.deleteOne({ id });
+    // Delete by string 'id' or Mongo '_id'
+    const result = await Cake.deleteOne({ $or: [{ id: id }, { _id: id.match(/^[0-9a-fA-F]{24}$/) ? id : null }] });
+
+    // On-Demand ISR Revalidation
+    try {
+      revalidatePath('/');
+      revalidatePath('/catalog');
+      revalidatePath(`/cake/${id}`);
+    } catch (e) {}
 
     return NextResponse.json({
       success: true,
+      deletedCount: result.deletedCount,
       message: `Cake ${id} deleted from MongoDB Atlas`,
     });
   } catch (error: any) {
+    console.error('MongoDB Atlas DELETE cake error:', error);
     return NextResponse.json({ error: error.message || 'Failed to delete cake' }, { status: 500 });
   }
 }

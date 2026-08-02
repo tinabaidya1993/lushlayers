@@ -1,13 +1,39 @@
 'use client';
 
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
+import { useRouter } from 'next/navigation';
 import { MessageCircle, MapPin, Clock, Phone, Sparkles, User, Heart } from 'lucide-react';
 import { buildGeneralInquiryWhatsAppUrl } from '@/lib/whatsapp';
 
 export default function Footer() {
   const whatsappUrl = buildGeneralInquiryWhatsAppUrl();
+  const router = useRouter();
+
+  // 3 Fast Clicks on Logo to Open Admin Panel
+  const [clickCount, setClickCount] = useState<number>(0);
+
+  const handleLogoTripleClick = (e: React.MouseEvent) => {
+    setClickCount((prev) => {
+      const nextCount = prev + 1;
+      if (nextCount >= 3) {
+        e.preventDefault();
+        router.push('/admin');
+        return 0;
+      }
+      return nextCount;
+    });
+  };
+
+  useEffect(() => {
+    if (clickCount > 0) {
+      const timer = setTimeout(() => {
+        setClickCount(0);
+      }, 800);
+      return () => clearTimeout(timer);
+    }
+  }, [clickCount]);
 
   return (
     <footer className="bg-gradient-to-b from-cream-100 via-cream-200/60 to-cream-200 border-t border-warmgray-300 text-charcoal-900 relative overflow-hidden">
@@ -22,7 +48,11 @@ export default function Footer() {
           
           {/* Brand Column with Official Seal */}
           <div className="space-y-3 sm:col-span-2 lg:col-span-1">
-            <Link href="/" className="group flex items-center space-x-3">
+            <Link
+              href="/"
+              onClick={handleLogoTripleClick}
+              className="group flex items-center space-x-3 cursor-pointer"
+            >
               <div className="relative w-11 h-11 rounded-full overflow-hidden border-2 border-gold-500/40 shadow-sm flex-shrink-0 bg-charcoal-900">
                 <Image
                   src="/logo.jpg"
@@ -43,7 +73,7 @@ export default function Footer() {
             </Link>
 
             <p className="text-xs text-warmgray-600 leading-relaxed max-w-sm font-normal">
-              Lush Layers by <strong>Tina Baidya</strong> is dedicated to 100% eggless fresh home-made luxury cakes, bespoke celebration tiers, and artisanal home-baked sweet sculpture in Kolkata.
+              Lush Layers by <strong>Tina Manna</strong> is dedicated to 100% eggless fresh home-made luxury cakes, bespoke celebration tiers, and artisanal home-baked sweet sculpture in Kolkata.
             </p>
           </div>
 
@@ -90,7 +120,7 @@ export default function Footer() {
             <ul className="space-y-2.5 text-xs text-warmgray-700 font-medium">
               <li className="flex items-center space-x-2">
                 <User className="w-4 h-4 text-gold-600 flex-shrink-0" />
-                <span>Home Baker: <strong className="text-charcoal-900 font-bold">Tina Baidya</strong></span>
+                <span>Home Baker: <strong className="text-charcoal-900 font-bold">Tina Manna</strong></span>
               </li>
               <li className="flex items-start space-x-2">
                 <MapPin className="w-4 h-4 text-gold-600 flex-shrink-0 mt-0.5" />

@@ -2,8 +2,10 @@
 
 import React, { useState } from 'react';
 import Image from 'next/image';
+import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { Lock, Mail, Eye, EyeOff, Sparkles, AlertCircle, ArrowRight, KeyRound, CheckCircle2, X } from 'lucide-react';
+import { Lock, Mail, Eye, EyeOff, Sparkles, AlertCircle, ArrowRight, KeyRound, CheckCircle2, X, ArrowLeft } from 'lucide-react';
+import { useScrollLock } from '@/hooks/useScrollLock';
 
 export default function AdminLoginPage() {
   const router = useRouter();
@@ -15,6 +17,9 @@ export default function AdminLoginPage() {
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
   const [showForgotPassword, setShowForgotPassword] = useState(false);
+
+  // Global Scroll Lock when forgot password modal is active
+  useScrollLock(showForgotPassword);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -174,9 +179,19 @@ export default function AdminLoginPage() {
 
         </form>
 
-        {/* Master Credentials Note */}
-        <div className="p-3 bg-cream-50 rounded-2xl border border-warmgray-200 text-center text-[10px] text-warmgray-600 font-semibold">
-          🔑 Default Credentials: <code className="text-charcoal-900 font-bold">admin@lushlayers.com</code> / <code className="text-charcoal-900 font-bold">admin123</code>
+        {/* Master Credentials Note & Back to Site */}
+        <div className="space-y-3 pt-2">
+          <Link
+            href="/"
+            className="w-full flex items-center justify-center space-x-2 py-2.5 rounded-2xl border border-warmgray-300 bg-cream-50 text-charcoal-900 font-bold text-xs hover:border-gold-500 hover:text-gold-700 transition-all"
+          >
+            <ArrowLeft className="w-4 h-4" />
+            <span>Back to Lush Layers Website</span>
+          </Link>
+
+          <div className="p-3 bg-cream-50 rounded-2xl border border-warmgray-200 text-center text-[10px] text-warmgray-600 font-semibold">
+            🔑 Default Credentials: <code className="text-charcoal-900 font-bold">admin@lushlayers.com</code> / <code className="text-charcoal-900 font-bold">admin123</code>
+          </div>
         </div>
 
       </div>
@@ -184,7 +199,7 @@ export default function AdminLoginPage() {
       {/* Forgot Password Modal */}
       {showForgotPassword && (
         <div className="fixed inset-0 z-50 bg-charcoal-900/60 backdrop-blur-xs flex items-center justify-center p-4">
-          <div className="bg-white w-full max-w-sm rounded-3xl p-6 shadow-2xl border border-warmgray-200 text-xs space-y-4">
+          <div className="bg-white w-full max-w-sm rounded-3xl p-6 shadow-2xl border border-warmgray-200 text-xs space-y-4 scroll-lock-overlay">
             <div className="flex justify-between items-center border-b border-warmgray-100 pb-2">
               <h3 className="font-serif font-bold text-base text-charcoal-900">Password Reset Instructions</h3>
               <button onClick={() => setShowForgotPassword(false)} className="text-warmgray-400 hover:text-charcoal-900">

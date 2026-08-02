@@ -2,7 +2,7 @@ export interface CakeItem {
   id: string;
   name: string;
   subtitle?: string;
-  category: 'wedding' | 'signature' | 'birthday' | 'artisanal' | 'vegan';
+  category: string;
   priceStartingFrom: number;
   description: string;
   shortDescription: string;
@@ -45,6 +45,7 @@ export interface OrderFormDetails {
   deliveryTime: string;
   cakeName: string;
   cakeCategory: string;
+  cakeImageUrl?: string;
   selectedWeight: string;
   selectedPrice: number;
   selectedFlavor: string;
@@ -52,6 +53,7 @@ export interface OrderFormDetails {
   selectedCreamType: string;
   selectedThemeColor: string;
   cakeMessage: string;
+  selectedAccessories?: { name: string; price: number }[];
   referenceFileName?: string;
   specialNotes: string;
   eggless: boolean;
@@ -60,8 +62,10 @@ export interface OrderFormDetails {
 export interface CategoryInfo {
   id: string;
   name: string;
+  group: string;
   tagline: string;
   description: string;
   heroImage: string;
   badge?: string;
+  subcategories?: string[];
 }
