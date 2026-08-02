@@ -5,12 +5,13 @@ import Link from 'next/link';
 import Image from 'next/image';
 import { usePathname, useRouter } from 'next/navigation';
 import { Menu, X, Sparkles, MessageCircle, Phone, MapPin, Clock, Search } from 'lucide-react';
-import { buildGeneralInquiryWhatsAppUrl } from '@/lib/whatsapp';
 import { useScrollLock } from '@/hooks/useScrollLock';
+import WhatsAppInquiryModal from '@/components/ui/WhatsAppInquiryModal';
 
 export default function Navbar() {
   const [scrolled, setScrolled] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [isWhatsAppModalOpen, setIsWhatsAppModalOpen] = useState(false);
   const pathname = usePathname();
   const router = useRouter();
 
@@ -61,8 +62,6 @@ export default function Navbar() {
     { name: 'Our Story', href: '/#story' },
     { name: 'Contact', href: '/#contact' },
   ];
-
-  const whatsappUrl = buildGeneralInquiryWhatsAppUrl();
 
   return (
     <>
@@ -138,30 +137,26 @@ export default function Navbar() {
                 <span className="relative z-10 font-bold">Custom Studio</span>
               </Link>
 
-              {/* Dynamic Animated WhatsApp Action Button (Full Text Preserved, Never Clipped) */}
-              <a
-                href={whatsappUrl}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="group relative inline-flex items-center space-x-1.5 text-[10px] xl:text-[11px] uppercase tracking-wider font-bold py-2 px-3.5 xl:px-4 rounded-full bg-gradient-to-r from-emerald-600 via-emerald-500 to-emerald-700 hover:from-emerald-500 hover:to-emerald-600 text-white transition-all duration-300 shadow-sm hover:shadow-emerald-600/40 hover:scale-105 active:scale-95 whitespace-nowrap flex-shrink-0 overflow-hidden"
+              {/* Dynamic Animated WhatsApp Action Button */}
+              <button
+                onClick={() => setIsWhatsAppModalOpen(true)}
+                className="group relative inline-flex items-center space-x-1.5 text-[10px] xl:text-[11px] uppercase tracking-wider font-bold py-2 px-3.5 xl:px-4 rounded-full bg-gradient-to-r from-emerald-600 via-emerald-500 to-emerald-700 hover:from-emerald-500 hover:to-emerald-600 text-white transition-all duration-300 shadow-sm hover:shadow-emerald-600/40 hover:scale-105 active:scale-95 whitespace-nowrap flex-shrink-0 overflow-hidden cursor-pointer"
               >
                 <span className="absolute inset-0 w-full h-full bg-gradient-to-r from-transparent via-white/30 to-transparent -translate-x-full group-hover:translate-x-full transition-transform duration-1000 ease-in-out"></span>
                 <MessageCircle className="w-3.5 h-3.5 text-white animate-bounce group-hover:scale-110 transition-transform" />
                 <span className="relative z-10 font-bold">WhatsApp</span>
-              </a>
+              </button>
             </div>
 
             {/* Mobile & Tablet Hamburger Toggle */}
             <div className="flex lg:hidden items-center space-x-2">
-              <a
-                href={whatsappUrl}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="p-2 rounded-full bg-emerald-600 text-white text-xs shadow-sm active:scale-95"
+              <button
+                onClick={() => setIsWhatsAppModalOpen(true)}
+                className="p-2 rounded-full bg-emerald-600 text-white text-xs shadow-sm active:scale-95 cursor-pointer"
                 aria-label="WhatsApp order"
               >
                 <MessageCircle className="w-4 h-4 animate-pulse" />
-              </a>
+              </button>
 
               <button
                 type="button"
@@ -229,15 +224,16 @@ export default function Navbar() {
                 <span>Custom Cake Studio</span>
               </Link>
 
-              <a
-                href={whatsappUrl}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="w-full flex items-center justify-center space-x-2 py-3.5 px-6 rounded-2xl bg-emerald-600 text-white text-xs uppercase tracking-widest font-bold shadow-md hover:bg-emerald-500 transition-all"
+              <button
+                onClick={() => {
+                  setMobileMenuOpen(false);
+                  setIsWhatsAppModalOpen(true);
+                }}
+                className="w-full flex items-center justify-center space-x-2 py-3.5 px-6 rounded-2xl bg-emerald-600 text-white text-xs uppercase tracking-widest font-bold shadow-md hover:bg-emerald-500 transition-all cursor-pointer"
               >
                 <MessageCircle className="w-4 h-4 animate-bounce" />
                 <span>Inquire via WhatsApp</span>
-              </a>
+              </button>
             </div>
 
             {/* Contact Information */}
@@ -258,6 +254,12 @@ export default function Navbar() {
           onClick={() => setMobileMenuOpen(false)}
         />
       )}
+
+      {/* WhatsApp Inquiry Form Modal */}
+      <WhatsAppInquiryModal
+        isOpen={isWhatsAppModalOpen}
+        onClose={() => setIsWhatsAppModalOpen(false)}
+      />
     </>
   );
 }

@@ -7,6 +7,8 @@ export const BOUTIQUE_WHATSAPP_NUMBER = '918768388868'; // Exact User Phone Numb
  */
 export function buildCakeInquiryWhatsAppUrl(cake: CakeItem, customNotes?: string, selectedWeight?: string, selectedPrice?: number): string {
   const priceVal = selectedPrice || cake?.priceStartingFrom || 0;
+  const imageLink = cake?.image ? `🖼️ *Cake Photo (Click to View):*\n${cake.image}\n` : '';
+
   const text = `Hello *Lush Layers* (Made With Love) 👋✨
 
 I would like to place an inquiry for your signature cake:
@@ -15,9 +17,10 @@ I would like to place an inquiry for your signature cake:
 ✨ *Category:* ${cake.category.toUpperCase()}
 💰 *Price:* ₹${priceVal.toLocaleString()}
 👥 *Servings/Weight:* ${selectedWeight || cake.servings}
-🍰 *Dietary:* ${cake.eggless ? '🌱 100% Eggless' : '🥚 Contains Egg'}
+🌱 *Dietary:* ${cake.eggless ? '100% Eggless' : 'Contains Egg'}
 🍫 *Flavors:* ${cake.flavors ? cake.flavors.join(', ') : 'Signature'}
 
+${imageLink}
 ${customNotes ? `📝 *Notes/Date Preference:* ${customNotes}\n` : ''}
 Could you please share availability and confirm details for this order?
 
@@ -34,10 +37,12 @@ export function buildOnePageOrderWhatsAppUrl(order: OrderFormDetails): string {
 
   const accessoriesText =
     order.selectedAccessories && order.selectedAccessories.length > 0
-      ? order.selectedAccessories.map((a) => `${a.name} (+₹${a.price})`).join(', ')
+      ? order.selectedAccessories.map((a) => `• ${a.name} (+₹${a.price})`).join('\n')
       : 'None';
 
-  const imageLinkText = order.cakeImageUrl ? `📷 *Cake Photo:* See Image (${order.cakeImageUrl})` : '';
+  const imageLinkText = order.cakeImageUrl
+    ? `🖼️ *Cake Photo (Click to View):*\n${order.cakeImageUrl}`
+    : '';
 
   const text = `✨ *LUSH LAYERS (MADE WITH LOVE) — CONFIRMED ORDER* ✨
 
@@ -51,12 +56,17 @@ export function buildOnePageOrderWhatsAppUrl(order: OrderFormDetails): string {
 ⚖️ *Weight / Size:* ${order.selectedWeight}
 💰 *Total Order Price:* ₹${priceVal.toLocaleString()}
 🌱 *Dietary:* ${order.eggless ? '100% Eggless' : 'Contains Egg'}
-${imageLinkText ? `${imageLinkText}\n` : ''}
+
+${imageLinkText}
+
 🍫 *Selected Flavor:* ${order.selectedFlavor}
 🔷 *Cake Shape:* ${order.selectedShape}
 🎨 *Theme Color:* ${order.selectedThemeColor}
 ✍️ *Plaque Lettering:* "${order.cakeMessage || 'None'}"
-🎉 *Add-on Accessories:* ${accessoriesText}
+
+🎉 *Selected Accessories & Add-ons:*
+${accessoriesText}
+
 ${order.specialNotes ? `📝 *Special Instructions:* ${order.specialNotes}\n` : ''}
 Please confirm availability for my date & send payment details. Thank you! ❤️💫`;
 
@@ -68,7 +78,9 @@ Please confirm availability for my date & send payment details. Thank you! ❤�
  */
 export function buildCustomCakeWhatsAppUrl(selection: CustomizationSelection & { customerName?: string; phoneNumber?: string; deliveryAddress?: string; deliveryTime?: string; cakeCategory?: string }): string {
   const toppingsList = selection.toppings && selection.toppings.length > 0 ? selection.toppings.join(', ') : 'None';
-  const refImageLink = selection.referenceImageUrl ? `📷 *Reference Design Photo:* See Image (${selection.referenceImageUrl})` : 'No reference photo attached';
+  const refImageLink = selection.referenceImageUrl
+    ? `🖼️ *Reference Design Photo (Click to View):*\n${selection.referenceImageUrl}`
+    : 'No reference photo attached';
 
   const text = `✨ *LUSH LAYERS (MADE WITH LOVE) — BESPOKE CUSTOM CAKE INQUIRY* ✨
 

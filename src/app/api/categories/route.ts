@@ -15,13 +15,24 @@ export async function GET(req: NextRequest) {
       return NextResponse.json({ success: true, count: 0, categories: [] });
     }
 
-    const categories = await Category.find({}).sort({ createdAt: 1 });
+    let categories = await Category.find({}).sort({ createdAt: 1 });
+
+    if (!categories || categories.length < CATEGORIES.length) {
+      try {
+        for (const cat of CATEGORIES) {
+          await Category.findOneAndUpdate({ id: cat.id }, cat, { upsert: true });
+        }
+        categories = await Category.find({}).sort({ createdAt: 1 });
+      } catch (e) {
+        categories = CATEGORIES as any;
+      }
+    }
 
     return NextResponse.json(
       {
         success: true,
         count: categories.length,
-        categories,
+        categories: categories && categories.length > 0 ? categories : CATEGORIES,
       },
       {
         headers: {

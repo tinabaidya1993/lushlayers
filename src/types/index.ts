@@ -2,7 +2,8 @@ export interface CakeItem {
   id: string;
   name: string;
   subtitle?: string;
-  category: 'wedding' | 'signature' | 'birthday' | 'artisanal' | 'vegan';
+  category: string; // Category ID or name
+  parentCategory?: string; // Parent Group Name (e.g. Celebration Cakes)
   priceStartingFrom: number;
   description: string;
   shortDescription: string;
@@ -62,8 +63,14 @@ export interface OrderFormDetails {
 export interface CategoryInfo {
   id: string;
   name: string;
+  group?: string;
+  parentGroup?: string;
+  parentId?: string;
+  isParent?: boolean;
   tagline: string;
   description: string;
   heroImage: string;
   badge?: string;
+  subcategories?: string[];
+  orderIndex?: number;
 }

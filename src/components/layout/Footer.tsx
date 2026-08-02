@@ -5,10 +5,10 @@ import Link from 'next/link';
 import Image from 'next/image';
 import { useRouter } from 'next/navigation';
 import { MessageCircle, MapPin, Clock, Phone, Sparkles, User, Heart } from 'lucide-react';
-import { buildGeneralInquiryWhatsAppUrl } from '@/lib/whatsapp';
+import WhatsAppInquiryModal from '@/components/ui/WhatsAppInquiryModal';
 
 export default function Footer() {
-  const whatsappUrl = buildGeneralInquiryWhatsAppUrl();
+  const [isWhatsAppModalOpen, setIsWhatsAppModalOpen] = useState(false);
   const router = useRouter();
 
   // 3 Fast Clicks on Logo to Open Admin Panel
@@ -73,7 +73,7 @@ export default function Footer() {
             </Link>
 
             <p className="text-xs text-warmgray-600 leading-relaxed max-w-sm font-normal">
-              Lush Layers by <strong>Tina Manna</strong> is dedicated to 100% eggless fresh home-made luxury cakes, bespoke celebration tiers, and artisanal home-baked sweet sculpture in Kolkata.
+              Lush Layers by <strong>Tina Baidya</strong> is dedicated to 100% eggless fresh home-made luxury cakes, bespoke celebration tiers, and artisanal home-baked sweet sculpture in Kolkata.
             </p>
           </div>
 
@@ -120,7 +120,7 @@ export default function Footer() {
             <ul className="space-y-2.5 text-xs text-warmgray-700 font-medium">
               <li className="flex items-center space-x-2">
                 <User className="w-4 h-4 text-gold-600 flex-shrink-0" />
-                <span>Home Baker: <strong className="text-charcoal-900 font-bold">Tina Manna</strong></span>
+                <span>Home Baker: <strong className="text-charcoal-900 font-bold">Tina Baidya</strong></span>
               </li>
               <li className="flex items-start space-x-2">
                 <MapPin className="w-4 h-4 text-gold-600 flex-shrink-0 mt-0.5" />
@@ -149,15 +149,13 @@ export default function Footer() {
               Direct WhatsApp ordering with <strong>Tina Baidya</strong>. Every cake is baked fresh on your order date in a hygienic home kitchen.
             </p>
             <div>
-              <a
-                href={whatsappUrl}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="inline-flex items-center space-x-2 bg-emerald-600 hover:bg-emerald-500 text-white text-xs uppercase tracking-wider font-bold px-4 py-2.5 rounded-full transition-all shadow-xs active:scale-95"
+              <button
+                onClick={() => setIsWhatsAppModalOpen(true)}
+                className="inline-flex items-center space-x-2 bg-emerald-600 hover:bg-emerald-500 text-white text-xs uppercase tracking-wider font-bold px-4 py-2.5 rounded-full transition-all shadow-xs active:scale-95 cursor-pointer"
               >
                 <MessageCircle className="w-4 h-4" />
                 <span>Order Fresh Home-Made Cake</span>
-              </a>
+              </button>
             </div>
           </div>
 
@@ -170,6 +168,12 @@ export default function Footer() {
         </div>
 
       </div>
+
+      {/* WhatsApp Inquiry Form Modal */}
+      <WhatsAppInquiryModal
+        isOpen={isWhatsAppModalOpen}
+        onClose={() => setIsWhatsAppModalOpen(false)}
+      />
     </footer>
   );
 }
