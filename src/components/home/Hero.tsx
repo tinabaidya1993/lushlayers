@@ -3,13 +3,14 @@
 import React, { useState, useEffect, useRef } from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
-import { Sparkles, MessageCircle, ArrowRight } from 'lucide-react';
+import { Sparkles, MessageCircle, ArrowRight, Award } from 'lucide-react';
 import { buildGeneralInquiryWhatsAppUrl } from '@/lib/whatsapp';
-import { DEFAULT_HERO_SLIDES, HeroSlideData } from '@/data/heroSlides';
+import { HeroSlideData } from '@/data/heroSlides';
 
 export default function Hero() {
   const whatsappUrl = buildGeneralInquiryWhatsAppUrl();
-  const [slides, setSlides] = useState<HeroSlideData[]>(DEFAULT_HERO_SLIDES);
+  const [slides, setSlides] = useState<HeroSlideData[]>([]);
+  const [loading, setLoading] = useState(true);
   const [currentIdx, setCurrentIdx] = useState<number>(0);
   const [isPaused, setIsPaused] = useState<boolean>(false);
 
@@ -26,14 +27,20 @@ export default function Hero() {
 
   const fetchHeroSlides = async () => {
     try {
-      const res = await fetch('/api/hero-slides');
+      setLoading(true);
+      const res = await fetch(`/api/hero-slides?t=${Date.now()}`, { cache: 'no-store' });
       const data = await res.json();
-      if (data.success && data.slides && data.slides.length > 0) {
+      if (data.success && Array.isArray(data.slides)) {
         const activeOnly = data.slides.filter((s: any) => s.active !== false);
-        setSlides(activeOnly.length > 0 ? activeOnly : DEFAULT_HERO_SLIDES);
+        setSlides(activeOnly);
+      } else {
+        setSlides([]);
       }
     } catch (err) {
-      console.warn('Hero slides fetch error, using default fallback slides');
+      console.warn('Hero slides fetch error:', err);
+      setSlides([]);
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -48,7 +55,6 @@ export default function Hero() {
     return () => clearInterval(timer);
   }, [isPaused, slides.length]);
 
-  // Pause Auto-Slide temporarily on manual user swipe / interaction (Resumes after 6 seconds of idle)
   const triggerManualInteractionPause = () => {
     setIsPaused(true);
     if (pauseTimerRef.current) clearTimeout(pauseTimerRef.current);
@@ -57,7 +63,6 @@ export default function Hero() {
     }, 6000);
   };
 
-  // Touch & Drag Swipe Handlers (Min distance 50px)
   const minSwipeDistance = 50;
 
   const handleTouchStart = (e: React.TouchEvent | React.MouseEvent) => {
@@ -78,12 +83,10 @@ export default function Hero() {
     if (!isDragging || touchStartX === null || touchEndX === null) return;
     const distance = touchStartX - touchEndX;
 
-    if (Math.abs(distance) > minSwipeDistance) {
+    if (Math.abs(distance) > minSwipeDistance && slides.length > 1) {
       if (distance > 0) {
-        // Swiped Left -> Next Slide
         setCurrentIdx((prev) => (prev + 1) % slides.length);
       } else {
-        // Swiped Right -> Previous Slide
         setCurrentIdx((prev) => (prev === 0 ? slides.length - 1 : prev - 1));
       }
     }
@@ -93,7 +96,7 @@ export default function Hero() {
     setIsDragging(false);
   };
 
-  const activeSlide = slides[currentIdx] || slides[0];
+  const activeSlide = slides.length > 0 ? slides[currentIdx] || slides[0] : null;
 
   return (
     <section className="relative bg-gradient-to-b from-cream-100 via-white to-cream-50 text-charcoal-900 pt-20 pb-6 sm:pt-24 sm:pb-8 overflow-hidden border-b border-warmgray-200/60">
@@ -106,8 +109,8 @@ export default function Hero() {
             
             <div className="inline-flex items-center space-x-2 px-3.5 py-1 rounded-full bg-white border border-gold-400 text-gold-700 shadow-sm">
               <Sparkles className="w-3.5 h-3.5 text-gold-600" />
-              <span className="text-[10px] uppercase tracking-[0.2em] font-bold" suppressHydrationWarning>
-                {activeSlide?.badgeTagline || DEFAULT_HERO_SLIDES[0].badgeTagline}
+              <span className="text-[10px] uppercase tracking-[0.2em] font-bold">
+                {activeSlide?.badgeTagline || '100% Eggless Home-Baked Atelier'}
               </span>
             </div>
 
@@ -116,8 +119,9 @@ export default function Hero() {
               <span className="italic text-gold-700 font-serif">Artisanal Cakes</span>
             </h1>
 
-            <p className="text-xs sm:text-sm text-warmgray-600 font-normal leading-relaxed max-w-md text-center lg:text-left" suppressHydrationWarning>
-              {activeSlide?.description || DEFAULT_HERO_SLIDES[0].description}
+            <p className="text-xs sm:text-sm text-warmgray-600 font-normal leading-relaxed max-w-md text-center lg:text-left">
+              {activeSlide?.description ||
+                'Handcrafted luxury 100% eggless cakes baked fresh on your order date in Kolkata by Owner & Pastry Chef Tina Manna.'}
             </p>
 
             <div className="pt-1 flex flex-wrap gap-3 items-center justify-center lg:justify-start">
@@ -142,74 +146,105 @@ export default function Hero() {
 
           </div>
 
-          {/* DYNAMIC SWIPE HERO CAKE CAROUSEL CARD (NO ARROWS, USER SWIPEABLE) */}
+          {/* DYNAMIC SWIPE HERO CAKE CAROUSEL CARD */}
           <div className="lg:col-span-6 relative mt-2 lg:mt-0">
             <div className="relative mx-auto max-w-sm sm:max-w-md lg:max-w-none">
               
-              <div
-                onTouchStart={handleTouchStart}
-                onTouchMove={handleTouchMove}
-                onTouchEnd={handleTouchEnd}
-                onMouseDown={handleTouchStart}
-                onMouseMove={handleTouchMove}
-                onMouseUp={handleTouchEnd}
-                onMouseLeave={handleTouchEnd}
-                className="relative aspect-[16/10] sm:aspect-[4/3] rounded-2xl overflow-hidden shadow-luxury border border-warmgray-200 bg-white group transform-gpu cursor-grab active:cursor-grabbing select-none"
-              >
-                <Image
-                  src={activeSlide?.image || DEFAULT_HERO_SLIDES[0].image}
-                  alt={activeSlide?.cakeName || DEFAULT_HERO_SLIDES[0].cakeName}
-                  fill
-                  priority
-                  sizes="(max-width: 768px) 100vw, 50vw"
-                  className="object-cover transition-transform duration-700 pointer-events-none"
-                />
-                
-                {/* Floating Info Overlay Bar */}
-                <div className="absolute bottom-2.5 left-2.5 right-2.5 bg-white/95 backdrop-blur-md p-3 rounded-xl border border-warmgray-200 shadow-sm flex justify-between items-center text-xs pointer-events-auto">
-                  <div>
-                    <span className="text-[9px] uppercase tracking-wider font-bold text-gold-700 block" suppressHydrationWarning>
-                      {activeSlide?.category || DEFAULT_HERO_SLIDES[0].category} ({currentIdx + 1}/{slides.length})
-                    </span>
-                    <h3 className="font-serif text-sm font-bold text-charcoal-900 truncate max-w-[180px] sm:max-w-[240px]" suppressHydrationWarning>
-                      {activeSlide?.cakeName || DEFAULT_HERO_SLIDES[0].cakeName}
-                    </h3>
+              {activeSlide ? (
+                <div
+                  onTouchStart={handleTouchStart}
+                  onTouchMove={handleTouchMove}
+                  onTouchEnd={handleTouchEnd}
+                  onMouseDown={handleTouchStart}
+                  onMouseMove={handleTouchMove}
+                  onMouseUp={handleTouchEnd}
+                  onMouseLeave={handleTouchEnd}
+                  className="relative aspect-[16/10] sm:aspect-[4/3] rounded-2xl overflow-hidden shadow-luxury border border-warmgray-200 bg-white group transform-gpu cursor-grab active:cursor-grabbing select-none"
+                >
+                  <Image
+                    src={activeSlide.image}
+                    alt={activeSlide.cakeName}
+                    fill
+                    priority
+                    sizes="(max-width: 768px) 100vw, 50vw"
+                    className="object-cover transition-transform duration-700 pointer-events-none"
+                  />
+                  
+                  {/* Floating Info Overlay Bar */}
+                  <div className="absolute bottom-2.5 left-2.5 right-2.5 bg-white/95 backdrop-blur-md p-3 rounded-xl border border-warmgray-200 shadow-sm flex justify-between items-center text-xs pointer-events-auto">
+                    <div>
+                      <span className="text-[9px] uppercase tracking-wider font-bold text-gold-700 block">
+                        {activeSlide.category || 'Signature'} ({currentIdx + 1}/{slides.length})
+                      </span>
+                      <h3 className="font-serif text-sm font-bold text-charcoal-900 truncate max-w-[180px] sm:max-w-[240px]">
+                        {activeSlide.cakeName}
+                      </h3>
+                    </div>
+                    <div className="text-right">
+                      <span className="font-serif text-sm font-bold text-gold-700 block">
+                        From ₹{(activeSlide.priceStartingFrom || 0).toLocaleString()}
+                      </span>
+                      <Link
+                        href={activeSlide.ctaLink || '/catalog'}
+                        className="text-[10px] font-bold text-charcoal-900 hover:text-gold-700 underline"
+                      >
+                        View Details →
+                      </Link>
+                    </div>
                   </div>
-                  <div className="text-right">
-                    <span className="font-serif text-sm font-bold text-gold-700 block" suppressHydrationWarning>
-                      From ₹{(activeSlide?.priceStartingFrom || DEFAULT_HERO_SLIDES[0].priceStartingFrom).toLocaleString()}
+
+                  {/* Swipe Helper Hint */}
+                  {slides.length > 1 && (
+                    <div className="absolute top-3 right-3 bg-charcoal-900/70 backdrop-blur-md text-white text-[9px] font-bold uppercase tracking-widest px-2.5 py-1 rounded-full pointer-events-none opacity-80">
+                      <span>← Swipe →</span>
+                    </div>
+                  )}
+                </div>
+              ) : (
+                /* Static Default Studio Showcase Banner when 0 Hero Slides Exist */
+                <div className="relative aspect-[16/10] sm:aspect-[4/3] rounded-2xl overflow-hidden shadow-luxury border border-warmgray-200 bg-gradient-to-br from-gold-950 via-charcoal-900 to-warmgray-900 p-6 sm:p-8 flex flex-col justify-between text-white">
+                  <div className="space-y-2">
+                    <span className="px-3 py-1 rounded-full bg-gold-500/30 border border-gold-400 text-gold-300 text-[10px] uppercase tracking-widest font-bold inline-block">
+                      Tina Manna Kitchen
                     </span>
+                    <h3 className="font-serif text-xl sm:text-2xl font-bold text-white leading-tight">
+                      Handcrafted Fresh On Order Date
+                    </h3>
+                    <p className="text-xs text-warmgray-300 max-w-xs leading-relaxed font-normal">
+                      Custom artisanal wedding tiers, bento cakes, and luxury celebration cakes baked with 100% eggless gourmet perfection.
+                    </p>
+                  </div>
+
+                  <div className="pt-4 border-t border-gold-500/30 flex justify-between items-center">
+                    <span className="text-[11px] font-mono text-gold-300 font-bold">Kolkata Atelier</span>
                     <Link
-                      href={activeSlide.ctaLink || '/catalog'}
-                      className="text-[10px] font-bold text-charcoal-900 hover:text-gold-700 underline"
+                      href="/custom-cake"
+                      className="px-4 py-2 rounded-full bg-gold-500 hover:bg-gold-600 text-white text-xs font-bold uppercase tracking-wider shadow-sm transition-all"
                     >
-                      View Details →
+                      Book Custom Order →
                     </Link>
                   </div>
                 </div>
-
-                {/* Swipe Helper Hint on First Slide */}
-                <div className="absolute top-3 right-3 bg-charcoal-900/70 backdrop-blur-md text-white text-[9px] font-bold uppercase tracking-widest px-2.5 py-1 rounded-full pointer-events-none opacity-80">
-                  <span>← Swipe →</span>
-                </div>
-              </div>
+              )}
 
               {/* Dot Indicators */}
-              <div className="flex justify-center space-x-2 mt-3">
-                {slides.map((_, i) => (
-                  <button
-                    key={i}
-                    onClick={() => {
-                      triggerManualInteractionPause();
-                      setCurrentIdx(i);
-                    }}
-                    className={`h-1.5 rounded-full transition-all cursor-pointer ${
-                      currentIdx === i ? 'w-7 bg-gold-500' : 'w-2 bg-warmgray-300 hover:bg-warmgray-400'
-                    }`}
-                    aria-label={`Go to slide ${i + 1}`}
-                  />
-                ))}
-              </div>
+              {slides.length > 1 && (
+                <div className="flex justify-center space-x-2 mt-3">
+                  {slides.map((_, i) => (
+                    <button
+                      key={i}
+                      onClick={() => {
+                        triggerManualInteractionPause();
+                        setCurrentIdx(i);
+                      }}
+                      className={`h-1.5 rounded-full transition-all cursor-pointer ${
+                        currentIdx === i ? 'w-7 bg-gold-500' : 'w-2 bg-warmgray-300 hover:bg-warmgray-400'
+                      }`}
+                      aria-label={`Go to slide ${i + 1}`}
+                    />
+                  ))}
+                </div>
+              )}
 
             </div>
           </div>
