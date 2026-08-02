@@ -6,6 +6,7 @@ import { Plus, Edit, Trash2, Layers, Sparkles, CheckCircle2, X, Upload, RefreshC
 import { CATEGORIES } from '@/data/cakes';
 import { CategoryInfo } from '@/types';
 import { useScrollLock } from '@/hooks/useScrollLock';
+import { optimizeImageClientSide } from '@/lib/imageOptimizer';
 
 export default function AdminCategoriesPage() {
   const [categories, setCategories] = useState<CategoryInfo[]>([]);
@@ -93,12 +94,15 @@ export default function AdminCategoriesPage() {
 
   const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     if (!e.target.files || !e.target.files[0]) return;
-    const file = e.target.files[0];
+    const rawFile = e.target.files[0];
 
     try {
       setUploadingImage(true);
+      
+      // Auto-compress and resize image client-side before upload
+      const optRes = await optimizeImageClientSide(rawFile);
       const formData = new FormData();
-      formData.append('file', file);
+      formData.append('file', optRes.file);
 
       const res = await fetch('/api/upload', {
         method: 'POST',

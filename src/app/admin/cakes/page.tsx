@@ -21,6 +21,7 @@ import { CakeItem } from '@/types';
 import { getOptimizedCloudinaryUrl } from '@/lib/cloudinaryClient';
 
 import { useScrollLock } from '@/hooks/useScrollLock';
+import { optimizeMultipleImagesClientSide } from '@/lib/imageOptimizer';
 
 const POUND_OPTIONS = [
   { lb: 0.5, label: '0.5 Pound (Half Pound)', multiplier: 1 },
@@ -208,12 +209,15 @@ export default function AdminCakesPage() {
 
   const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     if (!e.target.files || !e.target.files[0]) return;
-    const files = Array.from(e.target.files);
+    const rawFiles = Array.from(e.target.files);
 
     try {
       setUploadingImage(true);
+      
+      // Auto-compress and resize images client-side before upload
+      const optimizedResults = await optimizeMultipleImagesClientSide(rawFiles);
       const formData = new FormData();
-      files.forEach((file) => formData.append('file', file));
+      optimizedResults.forEach((res) => formData.append('file', res.file));
 
       const res = await fetch('/api/upload', {
         method: 'POST',

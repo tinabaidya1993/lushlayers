@@ -7,6 +7,7 @@ import { CustomizationSelection } from '@/types';
 import { Sparkles, MessageCircle, Check, AlertCircle, Upload, CheckCircle2 } from 'lucide-react';
 import dynamic from 'next/dynamic';
 import { buildCustomCakeWhatsAppUrl } from '@/lib/whatsapp';
+import { optimizeImageClientSide } from '@/lib/imageOptimizer';
 
 const RealisticCakeCanvas = dynamic(() => import('@/components/customizer/RealisticCakeCanvas'), {
   ssr: false,
@@ -83,12 +84,15 @@ export default function CustomCakePage() {
   // Direct Cloudinary Upload for Reference Image
   const handleReferenceUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     if (!e.target.files || !e.target.files[0]) return;
-    const file = e.target.files[0];
+    const rawFile = e.target.files[0];
 
     try {
       setUploadingImage(true);
+      
+      // Auto-compress and resize image client-side before upload
+      const optRes = await optimizeImageClientSide(rawFile);
       const formData = new FormData();
-      formData.append('file', file);
+      formData.append('file', optRes.file);
 
       const res = await fetch('/api/upload', {
         method: 'POST',
