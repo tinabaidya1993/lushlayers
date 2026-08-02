@@ -12,18 +12,11 @@ export async function GET(req: NextRequest) {
   try {
     await connectToDatabase();
 
-    let settings = await SiteSettings.findOne({ key: 'main' });
-    if (!settings) {
-      settings = await SiteSettings.create({ key: 'main' });
-    }
-
     let cakes = await Cake.find({}).sort({ createdAt: -1 }).lean();
 
-    // Only seed initial cakes data once if database has never been seeded
-    if (cakes.length === 0 && !settings.isSeeded) {
-      console.log('Initial seeding of cakes into MongoDB Atlas...');
+    if (!cakes || cakes.length === 0) {
+      console.log('Seeding initial cakes data into MongoDB Atlas...');
       await Cake.insertMany(CAKES_DATA);
-      await SiteSettings.updateOne({ key: 'main' }, { isSeeded: true });
       cakes = await Cake.find({}).sort({ createdAt: -1 }).lean();
     }
 

@@ -12,15 +12,9 @@ export async function GET(req: NextRequest) {
   try {
     await connectToDatabase();
 
-    let settings = await SiteSettings.findOne({ key: 'main' });
-    if (!settings) {
-      settings = await SiteSettings.create({ key: 'main' });
-    }
-
     let categories = await Category.find({}).sort({ createdAt: 1 });
 
-    // Seed initial categories once if database has never been seeded
-    if (categories.length === 0 && !settings.isSeeded) {
+    if (!categories || categories.length === 0) {
       await Category.insertMany(CATEGORIES);
       categories = await Category.find({}).sort({ createdAt: 1 });
     }

@@ -12,15 +12,9 @@ export async function GET(req: NextRequest) {
   try {
     await connectToDatabase();
 
-    let settings = await SiteSettings.findOne({ key: 'main' });
-    if (!settings) {
-      settings = await SiteSettings.create({ key: 'main' });
-    }
-
     let slides = await HeroSlide.find({}).sort({ orderIndex: 1, createdAt: -1 }).lean();
 
-    // Only seed initial hero slides once if database has never been seeded
-    if (slides.length === 0 && !settings.isSeeded) {
+    if (!slides || slides.length === 0) {
       await HeroSlide.insertMany(DEFAULT_HERO_SLIDES);
       slides = await HeroSlide.find({}).sort({ orderIndex: 1, createdAt: -1 }).lean();
     }
