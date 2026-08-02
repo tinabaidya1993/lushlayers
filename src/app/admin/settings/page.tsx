@@ -26,7 +26,7 @@ interface AccessoryItem {
   id: string;
   name: string;
   emoji: string;
-  price: number;
+  price: number | string;
   active: boolean;
 }
 
@@ -85,10 +85,15 @@ export default function AdminSettingsPage() {
 
   // New Accessory Form State
   const [showAddAccessory, setShowAddAccessory] = useState(false);
-  const [newAccessory, setNewAccessory] = useState<Omit<AccessoryItem, 'id'>>({
+  const [newAccessory, setNewAccessory] = useState<{
+    name: string;
+    emoji: string;
+    price: number | string;
+    active: boolean;
+  }>({
     name: '',
     emoji: '🎁',
-    price: 50,
+    price: '',
     active: true,
   });
 
@@ -135,10 +140,16 @@ export default function AdminSettingsPage() {
     e.preventDefault();
     try {
       setSaving(true);
+      // Clean up accessory prices to numeric before sending to backend
+      const sanitizedAccessories = settings.accessories.map((a) => ({
+        ...a,
+        price: a.price === '' || isNaN(Number(a.price)) ? 0 : Number(a.price),
+      }));
+
       const res = await fetch('/api/settings', {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(settings),
+        body: JSON.stringify({ ...settings, accessories: sanitizedAccessories }),
       });
       const data = await res.json();
       if (res.ok && data.success) {
@@ -189,14 +200,41 @@ export default function AdminSettingsPage() {
     }
   };
 
+  // Accessory Inline Editing Handlers
+  const handleUpdateAccessoryName = (id: string, name: string) => {
+    setSettings((prev) => ({
+      ...prev,
+      accessories: prev.accessories.map((a) => (a.id === id ? { ...a, name } : a)),
+    }));
+  };
+
+  const handleUpdateAccessoryEmoji = (id: string, emoji: string) => {
+    setSettings((prev) => ({
+      ...prev,
+      accessories: prev.accessories.map((a) => (a.id === id ? { ...a, emoji } : a)),
+    }));
+  };
+
+  const handleUpdateAccessoryPrice = (id: string, valueStr: string) => {
+    setSettings((prev) => ({
+      ...prev,
+      accessories: prev.accessories.map((a) =>
+        a.id === id ? { ...a, price: valueStr === '' ? '' : Number(valueStr) } : a
+      ),
+    }));
+  };
+
   const handleAddAccessory = () => {
     if (!newAccessory.name.trim()) return;
     const acc: AccessoryItem = {
       id: `acc-${Date.now().toString().slice(-6)}`,
-      ...newAccessory,
+      name: newAccessory.name.trim(),
+      emoji: newAccessory.emoji || '🎁',
+      price: newAccessory.price === '' ? 0 : Number(newAccessory.price),
+      active: newAccessory.active,
     };
     setSettings((prev) => ({ ...prev, accessories: [...prev.accessories, acc] }));
-    setNewAccessory({ name: '', emoji: '🎁', price: 50, active: true });
+    setNewAccessory({ name: '', emoji: '🎁', price: '', active: true });
     setShowAddAccessory(false);
   };
 
@@ -213,13 +251,6 @@ export default function AdminSettingsPage() {
       accessories: prev.accessories.map((a) =>
         a.id === id ? { ...a, active: !a.active } : a
       ),
-    }));
-  };
-
-  const handleUpdateAccessoryPrice = (id: string, price: number) => {
-    setSettings((prev) => ({
-      ...prev,
-      accessories: prev.accessories.map((a) => (a.id === id ? { ...a, price } : a)),
     }));
   };
 
@@ -505,7 +536,7 @@ export default function AdminSettingsPage() {
           </div>
         </div>
 
-        {/* Section 4: Celebration Add-on Accessories Manager */}
+        {/* Section 4: Celebration Add-on Accessories Manager (FULLY EDITABLE & BLANK PRICE FRIENDLY) */}
         <div className="bg-white rounded-3xl p-6 sm:p-8 border border-warmgray-200 shadow-sm space-y-4">
           <div className="flex justify-between items-center border-b border-warmgray-100 pb-2">
             <div>
@@ -513,7 +544,7 @@ export default function AdminSettingsPage() {
                 4. Celebration Add-on Accessories (Order Form)
               </h3>
               <p className="text-[10px] text-warmgray-500 mt-0.5">
-                These appear as checkboxes in the Order Form. Prices auto-add to the cake total.
+                Edit accessory name, emoji icon, or price directly inline. Prices auto-add to customer cake orders.
               </p>
             </div>
             <button
@@ -526,42 +557,64 @@ export default function AdminSettingsPage() {
             </button>
           </div>
 
-          <div className="space-y-2.5">
+          <div className="space-y-3">
             {settings.accessories.map((acc) => (
               <div
                 key={acc.id}
-                className={`p-3 rounded-xl border flex items-center justify-between text-xs transition-all ${
+                className={`p-3.5 rounded-2xl border flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs transition-all ${
                   acc.active
                     ? 'bg-cream-50 border-warmgray-200'
-                    : 'bg-warmgray-50 border-warmgray-100 opacity-50'
+                    : 'bg-warmgray-50 border-warmgray-100 opacity-60'
                 }`}
               >
-                <div className="flex items-center space-x-3">
-                  <span className="text-xl">{acc.emoji}</span>
-                  <div>
-                    <span className="font-bold text-charcoal-900 block">{acc.name}</span>
-                    <span className="text-[10px] text-warmgray-500">{acc.active ? 'Visible to customers' : 'Hidden'}</span>
+                <div className="flex items-center space-x-2 flex-grow">
+                  {/* Editable Emoji */}
+                  <input
+                    type="text"
+                    value={acc.emoji || ''}
+                    onChange={(e) => handleUpdateAccessoryEmoji(acc.id, e.target.value)}
+                    className="w-10 text-center text-lg py-1 rounded-xl border border-warmgray-300 focus:border-gold-500 focus:outline-none bg-white font-bold"
+                    maxLength={2}
+                    title="Edit Emoji"
+                  />
+                  {/* Editable Name */}
+                  <div className="flex-grow">
+                    <input
+                      type="text"
+                      value={acc.name || ''}
+                      onChange={(e) => handleUpdateAccessoryName(acc.id, e.target.value)}
+                      className="w-full px-3 py-1.5 rounded-xl border border-warmgray-300 font-bold text-charcoal-900 focus:border-gold-500 focus:outline-none bg-white text-xs"
+                      placeholder="Accessory Name (e.g. Birthday Candles Pack)"
+                    />
+                    <span className="text-[10px] text-warmgray-400 pl-1 mt-0.5 block">
+                      {acc.active ? '✓ Visible to customers' : 'Hidden from customers'}
+                    </span>
                   </div>
                 </div>
 
-                <div className="flex items-center space-x-3">
-                  {/* Inline Price Editor */}
-                  <div className="flex items-center space-x-1">
+                <div className="flex items-center justify-end space-x-3">
+                  {/* Blank-friendly Price Input */}
+                  <div className="flex items-center space-x-1 bg-white px-2.5 py-1 rounded-xl border border-warmgray-300 focus-within:border-gold-500">
                     <span className="font-bold text-gold-700">₹</span>
                     <input
                       type="number"
-                      value={acc.price}
-                      min={0}
-                      onChange={(e) => handleUpdateAccessoryPrice(acc.id, Number(e.target.value))}
-                      className="w-16 px-2 py-1 rounded-lg border border-warmgray-300 font-bold text-gold-800 focus:border-gold-500 focus:outline-none text-center"
+                      value={acc.price === '' || acc.price === undefined || acc.price === null ? '' : acc.price}
+                      onChange={(e) => handleUpdateAccessoryPrice(acc.id, e.target.value)}
+                      onBlur={() => {
+                        if (acc.price === '' || isNaN(Number(acc.price))) {
+                          handleUpdateAccessoryPrice(acc.id, '0');
+                        }
+                      }}
+                      placeholder="0"
+                      className="w-16 font-bold text-gold-800 focus:outline-none text-center text-xs"
                     />
                   </div>
 
-                  {/* Toggle Active */}
+                  {/* Toggle Active / Hidden */}
                   <button
                     type="button"
                     onClick={() => handleToggleAccessoryActive(acc.id)}
-                    className={`px-3 py-1 rounded-full text-[10px] font-bold transition-all cursor-pointer ${
+                    className={`px-3 py-1.5 rounded-full text-[10px] font-bold transition-all cursor-pointer ${
                       acc.active
                         ? 'bg-emerald-100 text-emerald-800 hover:bg-emerald-200'
                         : 'bg-warmgray-200 text-warmgray-600 hover:bg-warmgray-300'
@@ -574,10 +627,10 @@ export default function AdminSettingsPage() {
                   <button
                     type="button"
                     onClick={() => handleDeleteAccessory(acc.id)}
-                    className="p-1.5 rounded-lg text-red-500 hover:bg-red-50 transition-colors cursor-pointer"
+                    className="p-2 rounded-xl text-red-500 hover:bg-red-50 transition-colors cursor-pointer"
                     title="Delete accessory"
                   >
-                    <Trash2 className="w-3.5 h-3.5" />
+                    <Trash2 className="w-4 h-4" />
                   </button>
                 </div>
               </div>
@@ -595,40 +648,40 @@ export default function AdminSettingsPage() {
               </div>
               <div className="grid grid-cols-3 gap-3 text-xs">
                 <div className="col-span-1">
-                  <label className="block font-bold text-warmgray-700 mb-1">Emoji</label>
+                  <label className="block font-bold text-warmgray-700 mb-1">Emoji Icon</label>
                   <input
                     type="text"
                     value={newAccessory.emoji}
                     onChange={(e) => setNewAccessory({ ...newAccessory, emoji: e.target.value })}
-                    className="w-full px-3 py-2 rounded-xl border border-warmgray-300 text-center text-xl focus:outline-none"
+                    className="w-full px-3 py-2 rounded-xl border border-warmgray-300 text-center text-xl focus:outline-none bg-white font-bold"
                     maxLength={2}
                   />
                 </div>
                 <div className="col-span-2">
-                  <label className="block font-bold text-warmgray-700 mb-1">Name</label>
+                  <label className="block font-bold text-warmgray-700 mb-1">Accessory Name</label>
                   <input
                     type="text"
                     value={newAccessory.name}
                     onChange={(e) => setNewAccessory({ ...newAccessory, name: e.target.value })}
-                    placeholder="e.g. Gift Box Packaging"
-                    className="w-full px-3 py-2 rounded-xl border border-warmgray-300 font-medium focus:border-gold-500 focus:outline-none"
+                    placeholder="e.g. Premium Gift Box Packaging"
+                    className="w-full px-3 py-2 rounded-xl border border-warmgray-300 font-medium focus:border-gold-500 focus:outline-none bg-white"
                   />
                 </div>
                 <div>
                   <label className="block font-bold text-warmgray-700 mb-1">Price (₹)</label>
                   <input
                     type="number"
-                    value={newAccessory.price}
-                    min={0}
-                    onChange={(e) => setNewAccessory({ ...newAccessory, price: Number(e.target.value) })}
-                    className="w-full px-3 py-2 rounded-xl border border-warmgray-300 font-bold text-gold-800 focus:outline-none"
+                    value={newAccessory.price === '' ? '' : newAccessory.price}
+                    onChange={(e) => setNewAccessory({ ...newAccessory, price: e.target.value === '' ? '' : Number(e.target.value) })}
+                    placeholder="0"
+                    className="w-full px-3 py-2 rounded-xl border border-warmgray-300 font-bold text-gold-800 focus:outline-none bg-white"
                   />
                 </div>
               </div>
               <button
                 type="button"
                 onClick={handleAddAccessory}
-                className="w-full py-2 rounded-xl bg-gold-500 hover:bg-gold-600 text-white font-bold text-xs uppercase tracking-wider"
+                className="w-full py-2.5 rounded-xl bg-gold-500 hover:bg-gold-600 text-white font-bold text-xs uppercase tracking-wider shadow-xs"
               >
                 Add Accessory
               </button>
