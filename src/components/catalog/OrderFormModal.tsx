@@ -106,12 +106,34 @@ export default function OrderFormModal({
     }
   };
 
+  // Celebration Add-on Accessories State
+  const [selectedAccessories, setSelectedAccessories] = useState<{ id: string; name: string; price: number }[]>([]);
+
+  const celebrationAccessoriesList = [
+    { id: 'candles', name: '🎂 Birthday Candles Pack', price: 50 },
+    { id: 'knife', name: '🔪 Premium Cake Knife / Server', price: 40 },
+    { id: 'balloons', name: '🎈 Party Balloons (Pack of 5)', price: 100 },
+    { id: 'sparklers', name: '💖 Golden Party Sparklers (Pack of 2)', price: 80 },
+    { id: 'crown', name: '👑 Birthday Crown / Sash', price: 120 },
+  ];
+
+  const toggleAccessory = (acc: { id: string; name: string; price: number }) => {
+    setSelectedAccessories((prev) =>
+      prev.some((item) => item.id === acc.id)
+        ? prev.filter((item) => item.id !== acc.id)
+        : [...prev, acc]
+    );
+  };
+
+  const basePrice = weight?.price || selectedPrice || cake?.priceStartingFrom || 1500;
+  const accessoriesTotal = selectedAccessories.reduce((sum, item) => sum + item.price, 0);
+  const currentPrice = basePrice + accessoriesTotal;
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!isValid) return;
 
     const generatedOrderId = `LL-${Date.now().toString().slice(-6)}`;
-    const currentPrice = weight?.price || selectedPrice || cake?.priceStartingFrom || 1500;
     const currentWeightLabel = weight?.label || selectedWeightLabel || cake?.servings || '1.5 kg';
 
     const orderDetails: OrderFormDetails = {
@@ -122,6 +144,7 @@ export default function OrderFormModal({
       deliveryTime,
       cakeName: cake.name,
       cakeCategory: cake.category,
+      cakeImageUrl: cake.image,
       selectedWeight: currentWeightLabel,
       selectedPrice: currentPrice,
       selectedFlavor: flavor,
@@ -129,6 +152,7 @@ export default function OrderFormModal({
       selectedCreamType: creamType,
       selectedThemeColor: themeColor,
       cakeMessage: cakeMessage || 'None',
+      selectedAccessories,
       referenceFileName: referenceImageUrl ? 'Attached via Cloudinary' : '',
       specialNotes: referenceImageUrl ? `${specialNotes} (Reference: ${referenceImageUrl})` : specialNotes,
       eggless: cake.eggless,
@@ -412,20 +436,37 @@ export default function OrderFormModal({
                   />
                 </div>
 
-                {/* Upload Reference Image */}
+                {/* Celebration Add-on Accessories */}
                 <div>
-                  <label className="block font-bold text-warmgray-700 mb-1">Upload Reference Image (Cloudinary)</label>
-                  <div className="flex items-center space-x-3">
-                    <label className="px-3.5 py-2 rounded-xl border border-gold-500 text-gold-700 font-bold bg-gold-50 hover:bg-gold-500 hover:text-white transition-all cursor-pointer inline-flex items-center space-x-2 text-xs">
-                      <Upload className="w-3.5 h-3.5" />
-                      <span>{uploadingImage ? 'Uploading to CDN...' : 'Choose File'}</span>
-                      <input type="file" accept="image/*" onChange={handleReferenceUpload} className="hidden" />
-                    </label>
-                    {referenceImageUrl && (
-                      <span className="text-[10px] text-emerald-600 font-bold flex items-center">
-                        <Check className="w-3 h-3 mr-1" /> Reference Uploaded!
-                      </span>
-                    )}
+                  <label className="block font-bold text-warmgray-700 mb-1.5">
+                    Celebration Add-on Accessories (Optional)
+                  </label>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                    {celebrationAccessoriesList.map((acc) => {
+                      const isSelected = selectedAccessories.some((a) => a.id === acc.id);
+                      return (
+                        <label
+                          key={acc.id}
+                          onClick={() => toggleAccessory(acc)}
+                          className={`p-2.5 rounded-xl border text-xs font-semibold flex items-center justify-between cursor-pointer transition-all ${
+                            isSelected
+                              ? 'bg-gold-50 border-gold-500 text-charcoal-900 shadow-xs'
+                              : 'bg-cream-50 border-warmgray-200 text-warmgray-600 hover:border-warmgray-300'
+                          }`}
+                        >
+                          <div className="flex items-center space-x-2">
+                            <input
+                              type="checkbox"
+                              checked={isSelected}
+                              onChange={() => {}}
+                              className="accent-gold-600 rounded"
+                            />
+                            <span>{acc.name}</span>
+                          </div>
+                          <span className="font-bold text-gold-700">+₹{acc.price}</span>
+                        </label>
+                      );
+                    })}
                   </div>
                 </div>
               </div>
@@ -433,8 +474,8 @@ export default function OrderFormModal({
               {/* Submit Action */}
               <div className="pt-3 border-t border-warmgray-200 flex flex-col sm:flex-row justify-between items-center gap-3">
                 <div className="text-left w-full sm:w-auto">
-                  <span className="text-[10px] text-warmgray-500 uppercase tracking-wider block font-semibold">Total Estimated</span>
-                  <span className="font-serif text-2xl font-bold text-gold-700">₹{(weight?.price || cake?.priceStartingFrom || 0).toLocaleString()}</span>
+                  <span className="text-[10px] text-warmgray-500 uppercase tracking-wider block font-semibold">Total Order Price</span>
+                  <span className="font-serif text-2xl font-bold text-gold-700">₹{(currentPrice || 0).toLocaleString()}</span>
                 </div>
 
                 <button

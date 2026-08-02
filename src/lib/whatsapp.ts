@@ -31,6 +31,14 @@ Thank you! ❤️`;
  */
 export function buildOnePageOrderWhatsAppUrl(order: OrderFormDetails): string {
   const priceVal = order.selectedPrice || 0;
+
+  const accessoriesText =
+    order.selectedAccessories && order.selectedAccessories.length > 0
+      ? order.selectedAccessories.map((a) => `${a.name} (+₹${a.price})`).join(', ')
+      : 'None';
+
+  const imageLinkText = order.cakeImageUrl ? `📷 *Cake Photo:* See Image (${order.cakeImageUrl})` : '';
+
   const text = `✨ *LUSH LAYERS (MADE WITH LOVE) — CONFIRMED ORDER* ✨
 
 👤 *Customer Name:* ${order.customerName}
@@ -41,38 +49,50 @@ export function buildOnePageOrderWhatsAppUrl(order: OrderFormDetails): string {
 
 🎂 *Cake Name:* ${order.cakeName} (${(order.cakeCategory || '').toUpperCase()})
 ⚖️ *Weight / Size:* ${order.selectedWeight}
-💰 *Total Estimated Price:* ₹${priceVal.toLocaleString()}
+💰 *Total Order Price:* ₹${priceVal.toLocaleString()}
 🌱 *Dietary:* ${order.eggless ? '100% Eggless' : 'Contains Egg'}
-
+${imageLinkText ? `${imageLinkText}\n` : ''}
 🍫 *Selected Flavor:* ${order.selectedFlavor}
 🔷 *Cake Shape:* ${order.selectedShape}
 🎨 *Theme Color:* ${order.selectedThemeColor}
 ✍️ *Plaque Lettering:* "${order.cakeMessage || 'None'}"
-${order.referenceFileName ? `📷 *Reference Image:* Attached (${order.referenceFileName})\n` : ''}${order.specialNotes ? `📝 *Special Instructions:* ${order.specialNotes}\n` : ''}
+🎉 *Add-on Accessories:* ${accessoriesText}
+${order.specialNotes ? `📝 *Special Instructions:* ${order.specialNotes}\n` : ''}
 Please confirm availability for my date & send payment details. Thank you! ❤️💫`;
 
   return `https://wa.me/${BOUTIQUE_WHATSAPP_NUMBER}?text=${encodeURIComponent(text)}`;
 }
 
 /**
- * Builds a WhatsApp URL for a custom cake created via the Cake Customizer
+ * Builds a WhatsApp URL for a bespoke custom cake inquiry
  */
-export function buildCustomCakeWhatsAppUrl(selection: CustomizationSelection): string {
-  const toppingsList = selection.toppings.length > 0 ? selection.toppings.join(', ') : 'Minimalist / Standard Accent';
+export function buildCustomCakeWhatsAppUrl(selection: CustomizationSelection & { customerName?: string; phoneNumber?: string; deliveryAddress?: string; deliveryTime?: string; cakeCategory?: string }): string {
+  const toppingsList = selection.toppings && selection.toppings.length > 0 ? selection.toppings.join(', ') : 'None';
+  const refImageLink = selection.referenceImageUrl ? `📷 *Reference Design Photo:* See Image (${selection.referenceImageUrl})` : 'No reference photo attached';
 
-  const text = `Hello *Lush Layers* (Made With Love) ✨🎂
+  const text = `✨ *LUSH LAYERS (MADE WITH LOVE) — BESPOKE CUSTOM CAKE INQUIRY* ✨
 
-I have designed a custom cake on your website and would like to place a custom order query:
+👤 *Customer Name:* ${selection.customerName || 'Guest Customer'}
+📞 *Phone:* ${selection.phoneNumber || 'To be shared'}
+📍 *Delivery Address:* ${selection.deliveryAddress || 'To be provided'}
+📅 *Event Date:* ${selection.deliveryDate || 'Preferred Date TBD'}
+⏰ *Delivery Time Slot:* ${selection.deliveryTime || 'Afternoon'}
 
-👑 *Occasion:* ${selection.occasion || 'Special Celebration'}
-🍰 *Structure:* ${selection.tiers} Tier(s) | ${selection.shape.toUpperCase()} Shape (${selection.servings} Guests)
-🍫 *Sponge Base:* ${selection.spongeFlavor}
-🍯 *Gourmet Filling:* ${selection.fillingFlavor}
-🎨 *Frosting Style:* ${selection.frostingStyle}
-✨ *Color Palette:* ${selection.colorPalette}
+🎂 *Requested Category/Theme:* ${selection.cakeCategory || selection.occasion || 'Custom Bespoke Cake'}
+⚖️ *Weight / Servings Needed:* ${selection.servings} Guests (${selection.tiers} Tier)
+🍫 *Preferred Flavor:* ${selection.spongeFlavor} with ${selection.fillingFlavor}
+🔷 *Cake Shape:* ${selection.shape.toUpperCase()}
+🎨 *Color Theme / Style:* ${selection.colorPalette}
 🌸 *Decorative Accents:* ${toppingsList}
-${selection.customMessage ? `✍️ *Custom Plaque Text:* "${selection.customMessage}"\n` : ''}${selection.deliveryDate ? `📅 *Preferred Date:* ${selection.deliveryDate}\n` : ''}${selection.referenceImageUrl ? `📷 *Reference Photo (Cloudinary):* ${selection.referenceImageUrl}\n` : ''}${selection.notes ? `📝 *Special Requests:* ${selection.notes}\n` : ''}
-Please review my custom request and send me a price estimate and confirmation. Thank you! 💫`;
+
+${refImageLink}
+
+✍️ *Custom Plaque Text:* "${selection.customMessage || 'None'}"
+📝 *Special Instructions:* ${selection.notes || 'None'}
+
+💬 *Price Estimate:* To be estimated & discussed after reviewing reference image.
+
+Please review my custom reference design and share the price quote & availability. Thank you! ❤️💫`;
 
   return `https://wa.me/${BOUTIQUE_WHATSAPP_NUMBER}?text=${encodeURIComponent(text)}`;
 }
