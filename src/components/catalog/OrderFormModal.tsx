@@ -54,6 +54,18 @@ export default function OrderFormModal({
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [orderSuccess, setOrderSuccess] = useState<{ orderId: string; whatsappUrl: string } | null>(null);
 
+  // Celebration Add-on Accessories — fetched live from Admin Settings
+  const [selectedAccessories, setSelectedAccessories] = useState<{ id: string; name: string; price: number }[]>([]);
+  const [celebrationAccessoriesList, setCelebrationAccessoriesList] = useState<
+    { id: string; name: string; emoji: string; price: number }[]
+  >([
+    { id: 'candles', name: 'Birthday Candles Pack', emoji: '🎂', price: 50 },
+    { id: 'knife', name: 'Premium Cake Knife / Server', emoji: '🔪', price: 40 },
+    { id: 'balloons', name: 'Party Balloons (Pack of 5)', emoji: '🎈', price: 100 },
+    { id: 'sparklers', name: 'Golden Party Sparklers (Pack of 2)', emoji: '💖', price: 80 },
+    { id: 'crown', name: 'Birthday Crown / Sash', emoji: '👑', price: 120 },
+  ]);
+
   // Keep state in sync if props change
   useEffect(() => {
     if (cake) {
@@ -68,23 +80,6 @@ export default function OrderFormModal({
     }
   }, [cake, selectedWeightLabel, selectedPrice, selectedFlavor, selectedShape, selectedWeightOption]);
 
-  if (!cake) return null;
-
-  // Form Validation
-  const isValid = customerName.trim().length >= 2 && phoneNumber.trim().length >= 8 && deliveryAddress.trim().length >= 5;
-
-  // Celebration Add-on Accessories — fetched live from Admin Settings
-  const [selectedAccessories, setSelectedAccessories] = useState<{ id: string; name: string; price: number }[]>([]);
-  const [celebrationAccessoriesList, setCelebrationAccessoriesList] = useState<
-    { id: string; name: string; emoji: string; price: number }[]
-  >([
-    { id: 'candles', name: 'Birthday Candles Pack', emoji: '🎂', price: 50 },
-    { id: 'knife', name: 'Premium Cake Knife / Server', emoji: '🔪', price: 40 },
-    { id: 'balloons', name: 'Party Balloons (Pack of 5)', emoji: '🎈', price: 100 },
-    { id: 'sparklers', name: 'Golden Party Sparklers (Pack of 2)', emoji: '💖', price: 80 },
-    { id: 'crown', name: 'Birthday Crown / Sash', emoji: '👑', price: 120 },
-  ]);
-
   // Fetch live accessories from admin settings
   useEffect(() => {
     fetch('/api/settings')
@@ -97,6 +92,11 @@ export default function OrderFormModal({
       })
       .catch(() => {}); // silent fallback to defaults
   }, []);
+
+  if (!cake) return null;
+
+  // Form Validation
+  const isValid = customerName.trim().length >= 2 && phoneNumber.trim().length >= 8 && deliveryAddress.trim().length >= 5;
 
   const toggleAccessory = (acc: { id: string; name: string; price: number }) => {
     setSelectedAccessories((prev) =>
