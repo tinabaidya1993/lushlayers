@@ -24,15 +24,13 @@ export default function AdminCategoriesPage() {
   const fetchLiveCategories = async () => {
     try {
       setLoading(true);
-      const res = await fetch('/api/categories');
+      const res = await fetch(`/api/categories?t=${Date.now()}`, { cache: 'no-store' });
       const data = await res.json();
-      if (data.success && data.categories) {
+      if (data.success && Array.isArray(data.categories)) {
         setCategories(data.categories);
-      } else {
-        setCategories(CATEGORIES);
       }
     } catch (err) {
-      setCategories(CATEGORIES);
+      console.warn('MongoDB categories fetch error:', err);
     } finally {
       setLoading(false);
     }
@@ -44,7 +42,7 @@ export default function AdminCategoriesPage() {
       name: '',
       tagline: 'Artisanal Collection',
       description: 'Handcrafted luxury cakes designed for special occasions.',
-      heroImage: 'https://images.unsplash.com/photo-1535141192574-5d4897c13136?auto=format&fit=crop&w=1200&q=80',
+      heroImage: 'https://images.pexels.com/photos/1702373/pexels-photo-1702373.jpeg?auto=compress&cs=tinysrgb&w=1200',
       badge: 'New Collection',
     });
   };
@@ -64,15 +62,11 @@ export default function AdminCategoriesPage() {
       const data = await res.json();
 
       if (data.success && data.category) {
-        setCategories((prev) => {
-          const exists = prev.find((c) => c.id === data.category.id);
-          if (exists) {
-            return prev.map((c) => (c.id === data.category.id ? data.category : c));
-          }
-          return [...prev, data.category];
-        });
+        fetchLiveCategories();
         setEditingCategory(null);
         setSaveStatus('Category saved live!');
+      } else {
+        alert(`Failed to save category: ${data.error || 'Unknown error'}`);
       }
     } catch (err: any) {
       alert('Failed to save category');
@@ -85,10 +79,18 @@ export default function AdminCategoriesPage() {
     if (!confirm('Are you sure you want to delete this category from MongoDB Atlas?')) return;
 
     try {
-      await fetch(`/api/categories?id=${encodeURIComponent(id)}`, { method: 'DELETE' });
-      setCategories((prev) => prev.filter((c) => c.id !== id));
+      setCategories((prev) => prev.filter((c) => c.id !== id && (c as any)._id !== id));
+      const res = await fetch(`/api/categories?id=${encodeURIComponent(id)}`, { method: 'DELETE' });
+      const data = await res.json();
+      if (res.ok && data.success) {
+        fetchLiveCategories();
+      } else {
+        alert(`Failed to delete category: ${data.error || 'Unknown error'}`);
+        fetchLiveCategories();
+      }
     } catch (err) {
       alert('Failed to delete category');
+      fetchLiveCategories();
     }
   };
 

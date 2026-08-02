@@ -18,6 +18,7 @@ export interface ISiteSettings extends Document {
   instagram: string;
   facebook: string;
   accessories: IAccessoryItem[];
+  isSeeded?: boolean;
   updatedAt: Date;
 }
 
@@ -49,6 +50,7 @@ const SiteSettingsSchema: Schema = new Schema(
         { id: 'crown', name: 'Birthday Crown / Sash', emoji: '👑', price: 120, active: true },
       ],
     },
+    isSeeded: { type: Boolean, default: false },
   },
   { timestamps: true }
 );

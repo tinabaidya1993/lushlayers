@@ -15,7 +15,8 @@ import {
   MapPin,
   Calendar,
   User,
-  Phone
+  Phone,
+  Trash2,
 } from 'lucide-react';
 import { BOUTIQUE_WHATSAPP_NUMBER } from '@/lib/whatsapp';
 import { useScrollLock } from '@/hooks/useScrollLock';
@@ -37,13 +38,13 @@ export default function AdminOrdersPage() {
   const fetchOrders = async () => {
     try {
       setLoading(true);
-      const res = await fetch(`/api/orders?status=${statusFilter}`);
+      const res = await fetch(`/api/orders?status=${statusFilter}&t=${Date.now()}`, { cache: 'no-store' });
       const data = await res.json();
-      if (data.success && data.orders) {
+      if (data.success && Array.isArray(data.orders)) {
         setOrders(data.orders);
       }
     } catch (err) {
-      console.warn('MongoDB orders fetch fallback');
+      console.warn('MongoDB orders fetch error:', err);
     } finally {
       setLoading(false);
     }
@@ -65,6 +66,26 @@ export default function AdminOrdersPage() {
       }
     } catch (err) {
       alert('Failed to update order status');
+    }
+  };
+
+  const handleDeleteOrder = async (orderId: string) => {
+    if (!confirm(`Are you sure you want to delete order #${orderId} from MongoDB Atlas?`)) return;
+    try {
+      setOrders((prev) => prev.filter((o) => o.orderId !== orderId));
+      const res = await fetch(`/api/orders?orderId=${encodeURIComponent(orderId)}`, { method: 'DELETE' });
+      const data = await res.json();
+      if (res.ok && data.success) {
+        if (selectedOrder && selectedOrder.orderId === orderId) {
+          setSelectedOrder(null);
+        }
+        fetchOrders();
+      } else {
+        fetchOrders();
+      }
+    } catch (err) {
+      alert('Failed to delete order');
+      fetchOrders();
     }
   };
 
@@ -208,6 +229,15 @@ export default function AdminOrdersPage() {
                 <MessageCircle className="w-4 h-4" />
                 <span>Reply on WhatsApp</span>
               </a>
+
+              <button
+                onClick={() => handleDeleteOrder(selectedOrder.orderId)}
+                className="p-2.5 rounded-xl border border-red-200 bg-red-50 text-red-600 hover:bg-red-600 hover:text-white font-bold transition-all flex items-center space-x-1"
+                title="Delete order"
+              >
+                <Trash2 className="w-4 h-4" />
+                <span className="text-xs">Delete Order</span>
+              </button>
             </div>
 
           </div>
@@ -259,13 +289,20 @@ export default function AdminOrdersPage() {
                       <option value="Cancelled">Cancelled</option>
                     </select>
                   </td>
-                  <td className="p-4 text-right">
+                  <td className="p-4 text-right space-x-1">
                     <button
                       onClick={() => setSelectedOrder(order)}
                       className="p-2 text-warmgray-600 hover:text-gold-600 rounded-lg"
                       title="View details"
                     >
                       <Eye className="w-4 h-4" />
+                    </button>
+                    <button
+                      onClick={() => handleDeleteOrder(order.orderId)}
+                      className="p-2 text-red-500 hover:text-red-700 hover:bg-red-50 rounded-lg transition-colors"
+                      title="Delete order"
+                    >
+                      <Trash2 className="w-4 h-4" />
                     </button>
                   </td>
                 </tr>

@@ -2,34 +2,30 @@ import { NextRequest, NextResponse } from 'next/server';
 import { revalidatePath } from 'next/cache';
 import { connectToDatabase } from '@/lib/db';
 import Cake from '@/models/Cake';
+import SiteSettings from '@/models/SiteSettings';
 import { CAKES_DATA } from '@/data/cakes';
 
-// Serverless In-Memory Response Cache (TTL 60s)
-let cachedCakesData: { timestamp: number; cakes: any[] } | null = null;
-const CACHE_TTL_MS = 60 * 1000;
+export const dynamic = 'force-dynamic';
+export const revalidate = 0;
 
 export async function GET(req: NextRequest) {
   try {
-    const now = Date.now();
-    if (cachedCakesData && now - cachedCakesData.timestamp < CACHE_TTL_MS) {
-      return NextResponse.json(
-        { success: true, count: cachedCakesData.cakes.length, cakes: cachedCakesData.cakes, cached: true },
-        { headers: { 'Cache-Control': 's-maxage=60, stale-while-revalidate=300' } }
-      );
+    await connectToDatabase();
+
+    let settings = await SiteSettings.findOne({ key: 'main' });
+    if (!settings) {
+      settings = await SiteSettings.create({ key: 'main' });
     }
 
-    await connectToDatabase();
-    
-    // Seed initial data if MongoDB database is empty & use lean query for fast performance
     let cakes = await Cake.find({}).sort({ createdAt: -1 }).lean();
 
-    if (!cakes || cakes.length === 0) {
-      console.log('Seeding initial cakes data into MongoDB Atlas...');
+    // Only seed initial cakes data once if database has never been seeded
+    if (cakes.length === 0 && !settings.isSeeded) {
+      console.log('Initial seeding of cakes into MongoDB Atlas...');
       await Cake.insertMany(CAKES_DATA);
+      await SiteSettings.updateOne({ key: 'main' }, { isSeeded: true });
       cakes = await Cake.find({}).sort({ createdAt: -1 }).lean();
     }
-
-    cachedCakesData = { timestamp: now, cakes };
 
     return NextResponse.json(
       {
@@ -37,17 +33,27 @@ export async function GET(req: NextRequest) {
         count: cakes.length,
         cakes,
       },
-      { headers: { 'Cache-Control': 's-maxage=60, stale-while-revalidate=300' } }
+      {
+        headers: {
+          'Cache-Control': 'no-store, no-cache, must-revalidate, proxy-revalidate',
+        },
+      }
     );
   } catch (error: any) {
-    console.error('MongoDB Atlas GET error:', error);
-    // Fallback to static CAKES_DATA if DB connection fails
-    return NextResponse.json({
-      success: true,
-      count: CAKES_DATA.length,
-      cakes: CAKES_DATA,
-      source: 'static_fallback',
-    });
+    console.error('MongoDB Atlas GET cakes error:', error);
+    return NextResponse.json(
+      {
+        success: true,
+        count: CAKES_DATA.length,
+        cakes: CAKES_DATA,
+        source: 'static_fallback',
+      },
+      {
+        headers: {
+          'Cache-Control': 'no-store, no-cache, must-revalidate, proxy-revalidate',
+        },
+      }
+    );
   }
 }
 
@@ -62,24 +68,19 @@ export async function POST(req: NextRequest) {
 
     const newCake = await Cake.create(body);
 
-    // Invalidate in-memory cache
-    cachedCakesData = null;
-
     // On-Demand ISR Revalidation
     try {
       revalidatePath('/');
       revalidatePath('/catalog');
       revalidatePath(`/cake/${body.id}`);
-    } catch (e) {
-      // safe fallback
-    }
+    } catch (e) {}
 
     return NextResponse.json({
       success: true,
       cake: newCake,
     });
   } catch (error: any) {
-    console.error('MongoDB Atlas POST error:', error);
+    console.error('MongoDB Atlas POST cake error:', error);
     return NextResponse.json({ error: error.message || 'Failed to save cake to MongoDB' }, { status: 500 });
   }
 }
@@ -98,24 +99,19 @@ export async function PUT(req: NextRequest) {
       upsert: true,
     });
 
-    // Invalidate in-memory cache
-    cachedCakesData = null;
-
     // On-Demand ISR Revalidation
     try {
       revalidatePath('/');
       revalidatePath('/catalog');
       revalidatePath(`/cake/${body.id}`);
-    } catch (e) {
-      // safe fallback
-    }
+    } catch (e) {}
 
     return NextResponse.json({
       success: true,
       cake: updatedCake,
     });
   } catch (error: any) {
-    console.error('MongoDB Atlas PUT error:', error);
+    console.error('MongoDB Atlas PUT cake error:', error);
     return NextResponse.json({ error: error.message || 'Failed to update cake in MongoDB' }, { status: 500 });
   }
 }
@@ -130,25 +126,23 @@ export async function DELETE(req: NextRequest) {
       return NextResponse.json({ error: 'Cake ID is required' }, { status: 400 });
     }
 
-    await Cake.deleteOne({ id });
-
-    // Invalidate in-memory cache
-    cachedCakesData = null;
+    // Delete by string 'id' or Mongo '_id'
+    const result = await Cake.deleteOne({ $or: [{ id: id }, { _id: id.match(/^[0-9a-fA-F]{24}$/) ? id : null }] });
 
     // On-Demand ISR Revalidation
     try {
       revalidatePath('/');
       revalidatePath('/catalog');
       revalidatePath(`/cake/${id}`);
-    } catch (e) {
-      // safe fallback
-    }
+    } catch (e) {}
 
     return NextResponse.json({
       success: true,
+      deletedCount: result.deletedCount,
       message: `Cake ${id} deleted from MongoDB Atlas`,
     });
   } catch (error: any) {
+    console.error('MongoDB Atlas DELETE cake error:', error);
     return NextResponse.json({ error: error.message || 'Failed to delete cake' }, { status: 500 });
   }
 }

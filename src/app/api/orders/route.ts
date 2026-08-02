@@ -3,11 +3,13 @@ import { connectToDatabase } from '@/lib/db';
 import Order from '@/models/Order';
 import { BOUTIQUE_WHATSAPP_NUMBER } from '@/lib/whatsapp';
 
+export const dynamic = 'force-dynamic';
+export const revalidate = 0;
+
 export async function POST(req: NextRequest) {
   try {
     const body = await req.json();
 
-    // 1. Validation
     const { customerName, phoneNumber, deliveryAddress, deliveryDate, deliveryTime } = body.customerDetails || {};
     const { cakeName, image } = body.cakeSnapshot || {};
     const { weight, flavor, estimatedPrice } = body;
@@ -21,7 +23,6 @@ export async function POST(req: NextRequest) {
 
     const orderId = `LL-${Date.now().toString().slice(-6)}`;
 
-    // 2. Generate Clean Professional WhatsApp Message
     const textMessage = `✨ *LUSH LAYERS (MADE WITH LOVE) — CONFIRMED ORDER* ✨
 Order ID: #${orderId}
 
@@ -46,7 +47,6 @@ Please confirm availability for my date & send payment confirmation. Thank you! 
     const targetWhatsAppNumber = process.env.WHATSAPP_NUMBER || BOUTIQUE_WHATSAPP_NUMBER;
     const whatsappUrl = `https://wa.me/${targetWhatsAppNumber}?text=${encodeURIComponent(textMessage)}`;
 
-    // 3. Save Order to MongoDB Atlas
     await connectToDatabase();
     const orderDoc = await Order.create({
       orderId,
@@ -101,13 +101,20 @@ export async function GET(req: NextRequest) {
       query.status = statusFilter;
     }
 
-    const orders = await Order.find(query).sort({ createdAt: -1 }).limit(100);
+    const orders = await Order.find(query).sort({ createdAt: -1 }).limit(100).lean();
 
-    return NextResponse.json({
-      success: true,
-      count: orders.length,
-      orders,
-    });
+    return NextResponse.json(
+      {
+        success: true,
+        count: orders.length,
+        orders,
+      },
+      {
+        headers: {
+          'Cache-Control': 'no-store, no-cache, must-revalidate, proxy-revalidate',
+        },
+      }
+    );
   } catch (error: any) {
     return NextResponse.json({ error: error.message || 'Failed to fetch orders' }, { status: 500 });
   }
@@ -134,5 +141,26 @@ export async function PUT(req: NextRequest) {
     });
   } catch (error: any) {
     return NextResponse.json({ error: error.message || 'Failed to update order status' }, { status: 500 });
+  }
+}
+
+export async function DELETE(req: NextRequest) {
+  try {
+    await connectToDatabase();
+    const { searchParams } = new URL(req.url);
+    const orderId = searchParams.get('orderId');
+
+    if (!orderId) {
+      return NextResponse.json({ error: 'Order ID is required' }, { status: 400 });
+    }
+
+    await Order.deleteOne({ orderId });
+
+    return NextResponse.json({
+      success: true,
+      message: `Order #${orderId} deleted from MongoDB Atlas`,
+    });
+  } catch (error: any) {
+    return NextResponse.json({ error: error.message || 'Failed to delete order' }, { status: 500 });
   }
 }

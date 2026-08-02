@@ -2,34 +2,28 @@ import { NextRequest, NextResponse } from 'next/server';
 import { revalidatePath } from 'next/cache';
 import { connectToDatabase } from '@/lib/db';
 import HeroSlide from '@/models/HeroSlide';
+import SiteSettings from '@/models/SiteSettings';
 import { DEFAULT_HERO_SLIDES } from '@/data/heroSlides';
 
-// In-memory cache for hero slides (TTL 60s)
-let cachedHeroSlides: { timestamp: number; slides: any[] } | null = null;
-const CACHE_TTL_MS = 60 * 1000;
+export const dynamic = 'force-dynamic';
+export const revalidate = 0;
 
 export async function GET(req: NextRequest) {
   try {
-    const now = Date.now();
-    if (cachedHeroSlides && now - cachedHeroSlides.timestamp < CACHE_TTL_MS) {
-      return NextResponse.json(
-        { success: true, count: cachedHeroSlides.slides.length, slides: cachedHeroSlides.slides, cached: true },
-        { headers: { 'Cache-Control': 's-maxage=60, stale-while-revalidate=300' } }
-      );
-    }
-
     await connectToDatabase();
 
-    // Seed default hero slides if MongoDB Atlas collection is empty
+    let settings = await SiteSettings.findOne({ key: 'main' });
+    if (!settings) {
+      settings = await SiteSettings.create({ key: 'main' });
+    }
+
     let slides = await HeroSlide.find({}).sort({ orderIndex: 1, createdAt: -1 }).lean();
 
-    if (!slides || slides.length === 0) {
-      console.log('Seeding initial Hero Slides data into MongoDB Atlas...');
+    // Only seed initial hero slides once if database has never been seeded
+    if (slides.length === 0 && !settings.isSeeded) {
       await HeroSlide.insertMany(DEFAULT_HERO_SLIDES);
       slides = await HeroSlide.find({}).sort({ orderIndex: 1, createdAt: -1 }).lean();
     }
-
-    cachedHeroSlides = { timestamp: now, slides };
 
     return NextResponse.json(
       {
@@ -37,16 +31,26 @@ export async function GET(req: NextRequest) {
         count: slides.length,
         slides,
       },
-      { headers: { 'Cache-Control': 's-maxage=60, stale-while-revalidate=300' } }
+      {
+        headers: {
+          'Cache-Control': 'no-store, no-cache, must-revalidate, proxy-revalidate',
+        },
+      }
     );
   } catch (error: any) {
-    console.error('MongoDB Atlas HeroSlides GET error:', error);
-    return NextResponse.json({
-      success: true,
-      count: DEFAULT_HERO_SLIDES.length,
-      slides: DEFAULT_HERO_SLIDES,
-      source: 'static_fallback',
-    });
+    return NextResponse.json(
+      {
+        success: true,
+        count: DEFAULT_HERO_SLIDES.length,
+        slides: DEFAULT_HERO_SLIDES,
+        source: 'static_fallback',
+      },
+      {
+        headers: {
+          'Cache-Control': 'no-store, no-cache, must-revalidate, proxy-revalidate',
+        },
+      }
+    );
   }
 }
 
@@ -62,20 +66,15 @@ export async function POST(req: NextRequest) {
     const slideId = body.id || `hero-${Date.now().toString().slice(-6)}`;
     const newSlide = await HeroSlide.create({ ...body, id: slideId });
 
-    cachedHeroSlides = null;
-
     try {
       revalidatePath('/');
-    } catch (e) {
-      // safe fallback
-    }
+    } catch (e) {}
 
     return NextResponse.json({
       success: true,
       slide: newSlide,
     });
   } catch (error: any) {
-    console.error('HeroSlide POST error:', error);
     return NextResponse.json({ error: error.message || 'Failed to create hero slide' }, { status: 500 });
   }
 }
@@ -94,20 +93,15 @@ export async function PUT(req: NextRequest) {
       upsert: true,
     });
 
-    cachedHeroSlides = null;
-
     try {
       revalidatePath('/');
-    } catch (e) {
-      // safe fallback
-    }
+    } catch (e) {}
 
     return NextResponse.json({
       success: true,
       slide: updatedSlide,
     });
   } catch (error: any) {
-    console.error('HeroSlide PUT error:', error);
     return NextResponse.json({ error: error.message || 'Failed to update hero slide' }, { status: 500 });
   }
 }
@@ -122,18 +116,15 @@ export async function DELETE(req: NextRequest) {
       return NextResponse.json({ error: 'Slide ID is required' }, { status: 400 });
     }
 
-    await HeroSlide.deleteOne({ id });
-
-    cachedHeroSlides = null;
+    const result = await HeroSlide.deleteOne({ $or: [{ id: id }, { _id: id.match(/^[0-9a-fA-F]{24}$/) ? id : null }] });
 
     try {
       revalidatePath('/');
-    } catch (e) {
-      // safe fallback
-    }
+    } catch (e) {}
 
     return NextResponse.json({
       success: true,
+      deletedCount: result.deletedCount,
       message: `Hero Slide ${id} deleted`,
     });
   } catch (error: any) {

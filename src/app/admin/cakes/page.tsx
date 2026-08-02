@@ -70,17 +70,14 @@ export default function AdminCakesPage() {
   const fetchLiveCakes = async () => {
     try {
       setLoading(true);
-      const res = await fetch('/api/cakes');
+      const res = await fetch(`/api/cakes?t=${Date.now()}`, { cache: 'no-store' });
       const data = await res.json();
 
-      if (data.success && data.cakes) {
+      if (data.success && Array.isArray(data.cakes)) {
         setCakes(data.cakes);
-      } else {
-        setCakes(CAKES_DATA);
       }
     } catch (err) {
-      console.warn('MongoDB fetch failed, using fallback:', err);
-      setCakes(CAKES_DATA);
+      console.warn('MongoDB cakes fetch error:', err);
     } finally {
       setLoading(false);
     }
@@ -88,15 +85,13 @@ export default function AdminCakesPage() {
 
   const fetchLiveHeroSlides = async () => {
     try {
-      const res = await fetch('/api/hero-slides');
+      const res = await fetch(`/api/hero-slides?t=${Date.now()}`, { cache: 'no-store' });
       const data = await res.json();
-      if (data.success && data.slides) {
+      if (data.success && Array.isArray(data.slides)) {
         setHeroSlides(data.slides);
-      } else {
-        setHeroSlides(DEFAULT_HERO_SLIDES);
       }
     } catch (err) {
-      setHeroSlides(DEFAULT_HERO_SLIDES);
+      console.warn('MongoDB hero slides fetch error:', err);
     }
   };
 
@@ -238,6 +233,7 @@ export default function AdminCakesPage() {
     if (!confirm('Are you sure you want to delete this cake from MongoDB Atlas?')) return;
 
     try {
+      setCakes((prev) => prev.filter((c) => c.id !== id && (c as any)._id !== id));
       const res = await fetch(`/api/cakes?id=${id}`, { method: 'DELETE' });
       const data = await res.json();
 
@@ -247,9 +243,11 @@ export default function AdminCakesPage() {
         setTimeout(() => setSaveStatus(null), 4000);
       } else {
         alert(`Failed to delete: ${data.error}`);
+        fetchLiveCakes();
       }
     } catch (err: any) {
       alert(`Error deleting cake: ${err.message}`);
+      fetchLiveCakes();
     }
   };
 
@@ -340,15 +338,19 @@ export default function AdminCakesPage() {
   const handleDeleteHeroSlide = async (id: string) => {
     if (!confirm('Are you sure you want to delete this hero slide?')) return;
     try {
+      setHeroSlides((prev) => prev.filter((s) => s.id !== id && (s as any)._id !== id));
       const res = await fetch(`/api/hero-slides?id=${id}`, { method: 'DELETE' });
       const data = await res.json();
       if (res.ok && data.success) {
         setSaveStatus('Hero slide deleted');
         fetchLiveHeroSlides();
         setTimeout(() => setSaveStatus(null), 4000);
+      } else {
+        fetchLiveHeroSlides();
       }
     } catch (err: any) {
       alert(`Error deleting hero slide: ${err.message}`);
+      fetchLiveHeroSlides();
     }
   };
 
