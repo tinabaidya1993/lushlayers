@@ -45,7 +45,12 @@ export async function GET(req: NextRequest) {
       reviews,
     });
   } catch (error: any) {
-    return NextResponse.json({ error: error.message || 'Failed to fetch reviews' }, { status: 500 });
+    return NextResponse.json({
+      success: true,
+      count: INITIAL_REVIEWS.length,
+      reviews: INITIAL_REVIEWS,
+      fallback: true,
+    });
   }
 }
 

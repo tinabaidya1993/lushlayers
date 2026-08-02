@@ -28,7 +28,20 @@ export async function GET() {
     return NextResponse.json({ success: true, settings });
   } catch (error: any) {
     console.error('Settings GET error:', error);
-    return NextResponse.json({ error: error.message || 'Failed to fetch settings' }, { status: 500 });
+    return NextResponse.json({
+      success: true,
+      settings: {
+        key: 'main',
+        accessories: [
+          { id: 'candles', name: 'Birthday Candles Pack', emoji: '🎂', price: 50 },
+          { id: 'knife', name: 'Premium Cake Knife / Server', emoji: '🔪', price: 40 },
+          { id: 'balloons', name: 'Party Balloons (Pack of 5)', emoji: '🎈', price: 100 },
+          { id: 'sparklers', name: 'Golden Party Sparklers (Pack of 2)', emoji: '💖', price: 80 },
+          { id: 'crown', name: 'Birthday Crown / Sash', emoji: '👑', price: 120 },
+        ],
+      },
+      fallback: true,
+    });
   }
 }
 
