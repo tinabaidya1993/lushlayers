@@ -10,14 +10,12 @@ export const revalidate = 0;
 
 export async function GET(req: NextRequest) {
   try {
-    await connectToDatabase();
-
-    let categories = await Category.find({}).sort({ createdAt: 1 });
-
-    if (!categories || categories.length === 0) {
-      await Category.insertMany(CATEGORIES);
-      categories = await Category.find({}).sort({ createdAt: 1 });
+    const conn = await connectToDatabase();
+    if (!conn) {
+      return NextResponse.json({ success: true, count: 0, categories: [] });
     }
+
+    const categories = await Category.find({}).sort({ createdAt: 1 });
 
     return NextResponse.json(
       {
@@ -106,7 +104,11 @@ export async function PUT(req: NextRequest) {
 
 export async function DELETE(req: NextRequest) {
   try {
-    await connectToDatabase();
+    const conn = await connectToDatabase();
+    if (!conn) {
+      return NextResponse.json({ error: 'Database connection not configured' }, { status: 503 });
+    }
+
     const { searchParams } = new URL(req.url);
     const id = searchParams.get('id');
 
@@ -114,7 +116,11 @@ export async function DELETE(req: NextRequest) {
       return NextResponse.json({ error: 'Category ID is required' }, { status: 400 });
     }
 
-    const result = await Category.deleteOne({ $or: [{ id: id }, { _id: id.match(/^[0-9a-fA-F]{24}$/) ? id : null }] });
+    const filter = id.match(/^[0-9a-fA-F]{24}$/)
+      ? { $or: [{ id: id }, { _id: id }] }
+      : { id: id };
+
+    const result = await Category.deleteOne(filter);
 
     try {
       revalidatePath('/');

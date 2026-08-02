@@ -110,7 +110,11 @@ export async function DELETE(req: NextRequest) {
       return NextResponse.json({ error: 'Slide ID is required' }, { status: 400 });
     }
 
-    const result = await HeroSlide.deleteOne({ $or: [{ id: id }, { _id: id.match(/^[0-9a-fA-F]{24}$/) ? id : null }] });
+    const filter = id.match(/^[0-9a-fA-F]{24}$/)
+      ? { $or: [{ id: id }, { _id: id }] }
+      : { id: id };
+
+    const result = await HeroSlide.deleteOne(filter);
 
     try {
       revalidatePath('/');

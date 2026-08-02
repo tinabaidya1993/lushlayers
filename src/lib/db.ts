@@ -12,6 +12,8 @@ declare global {
   var mongooseCache: MongooseCache | undefined;
 }
 
+mongoose.set('bufferCommands', false);
+
 let cached: MongooseCache = global.mongooseCache || { conn: null, promise: null };
 
 if (!global.mongooseCache) {

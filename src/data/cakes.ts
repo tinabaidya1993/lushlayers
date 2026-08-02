@@ -1,47 +1,6 @@
 import { CakeItem, CategoryInfo } from '@/types';
 
-export const CATEGORIES: CategoryInfo[] = [
-  {
-    id: 'wedding',
-    name: 'Grand Wedding Tiered Cakes',
-    tagline: 'Architectural Elegance for Your Special Day',
-    description: 'Multi-tiered masterpieces crafted with fine Belgian chocolate, edible 24k gold leafing, handcrafted sugar blooms, and silk finishes.',
-    heroImage: 'https://images.unsplash.com/photo-1535141192574-5d4897c13136?auto=format&fit=crop&w=1200&q=80',
-    badge: 'Couture Collection'
-  },
-  {
-    id: 'signature',
-    name: 'Lush Signature Creations',
-    tagline: 'Decadent Flavors, Unrivaled Craftsmanship',
-    description: 'Our head cake artist’s flagship designs featuring velvet textures, Madagascar vanilla bean, berries, and gold accents.',
-    heroImage: 'https://images.unsplash.com/photo-1578985545062-69928b1d9587?auto=format&fit=crop&w=1200&q=80',
-    badge: 'Bestseller'
-  },
-  {
-    id: 'birthday',
-    name: 'Celebration & Birthday',
-    tagline: 'Make Every Milestone Unforgettable',
-    description: 'Contemporary minimalist cake designs infused with playful luxury, pastel palettes, champagne sponge, and customized cake plaques.',
-    heroImage: 'https://images.unsplash.com/photo-1565958011703-44f9829ba187?auto=format&fit=crop&w=1200&q=80',
-    badge: 'Most Popular'
-  },
-  {
-    id: 'artisanal',
-    name: 'Artisanal & Modern Minimal',
-    tagline: 'Sculptural Aesthetic Meets Fine Baking',
-    description: 'Textured buttercream strokes, organic dried floral arrangements, geometric deckings, and dark chocolate ganache drips.',
-    heroImage: 'https://images.unsplash.com/photo-1588195538326-c5b1e9f80a1b?auto=format&fit=crop&w=1200&q=80',
-    badge: 'Architectural'
-  },
-  {
-    id: 'vegan',
-    name: 'Plant-Based & Guilt-Free Luxury',
-    tagline: 'Zero Compromise on Texture or Flavor',
-    description: 'Organic coconut cream, almond flour sponges, raw cocoa ganache, and berry coulis crafted for refined dietary preferences.',
-    heroImage: 'https://images.unsplash.com/photo-1606890737304-57a1ca8a5b62?auto=format&fit=crop&w=1200&q=80',
-    badge: 'Organic & Vegan'
-  }
-];
+export const CATEGORIES: CategoryInfo[] = [];
 
 export const CAKES_DATA: CakeItem[] = [
   {

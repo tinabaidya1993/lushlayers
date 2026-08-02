@@ -119,8 +119,11 @@ export async function DELETE(req: NextRequest) {
       return NextResponse.json({ error: 'Cake ID is required' }, { status: 400 });
     }
 
-    // Delete by string 'id' or Mongo '_id'
-    const result = await Cake.deleteOne({ $or: [{ id: id }, { _id: id.match(/^[0-9a-fA-F]{24}$/) ? id : null }] });
+    const filter = id.match(/^[0-9a-fA-F]{24}$/)
+      ? { $or: [{ id: id }, { _id: id }] }
+      : { id: id };
+
+    const result = await Cake.deleteOne(filter);
 
     // On-Demand ISR Revalidation
     try {
