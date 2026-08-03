@@ -3,7 +3,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
-import { Sparkles, MessageCircle, ArrowRight, Award } from 'lucide-react';
+import { Sparkles, MessageCircle, ArrowRight } from 'lucide-react';
 import { buildGeneralInquiryWhatsAppUrl } from '@/lib/whatsapp';
 import { HeroSlideData } from '@/data/heroSlides';
 
@@ -96,7 +96,7 @@ export default function Hero() {
     setIsDragging(false);
   };
 
-  const activeSlide = slides.length > 0 ? slides[currentIdx] || slides[0] : null;
+  const activeSlide = !loading && slides.length > 0 ? slides[currentIdx] || slides[0] : null;
 
   return (
     <section className="relative bg-gradient-to-b from-cream-100 via-white to-cream-50 text-charcoal-900 pt-20 pb-6 sm:pt-24 sm:pb-8 overflow-hidden border-b border-warmgray-200/60">
@@ -121,7 +121,7 @@ export default function Hero() {
 
             <p className="text-xs sm:text-sm text-warmgray-600 font-normal leading-relaxed max-w-md text-center lg:text-left">
               {activeSlide?.description ||
-                'Handcrafted luxury 100% eggless cakes baked fresh on your order date in Kolkata by Owner & Pastry Chef Tina Manna.'}
+                'Handcrafted luxury 100% eggless cakes baked fresh on your order date in Kolkata by Owner & Pastry Chef Tina Baidya.'}
             </p>
 
             <div className="pt-1 flex flex-wrap gap-3 items-center justify-center lg:justify-start">
@@ -150,7 +150,17 @@ export default function Hero() {
           <div className="lg:col-span-6 relative mt-2 lg:mt-0">
             <div className="relative mx-auto max-w-sm sm:max-w-md lg:max-w-none">
               
-              {activeSlide ? (
+              {loading ? (
+                /* Elegant Luxury Hero Skeleton Loader */
+                <div className="relative aspect-[16/10] sm:aspect-[4/3] rounded-2xl overflow-hidden shadow-luxury border border-warmgray-200 bg-cream-100 animate-pulse flex flex-col justify-between p-4">
+                  <div className="w-full h-full bg-warmgray-200/60 rounded-xl"></div>
+                  <div className="absolute bottom-2.5 left-2.5 right-2.5 bg-white/90 p-3 rounded-xl space-y-2">
+                    <div className="w-24 h-3 bg-warmgray-200 rounded"></div>
+                    <div className="w-48 h-4 bg-warmgray-300 rounded"></div>
+                  </div>
+                </div>
+              ) : activeSlide ? (
+                /* Real MongoDB Hero Slide Carousel Card */
                 <div
                   onTouchStart={handleTouchStart}
                   onTouchMove={handleTouchMove}
@@ -200,35 +210,10 @@ export default function Hero() {
                     </div>
                   )}
                 </div>
-              ) : (
-                /* Static Default Studio Showcase Banner when 0 Hero Slides Exist */
-                <div className="relative aspect-[16/10] sm:aspect-[4/3] rounded-2xl overflow-hidden shadow-luxury border border-warmgray-200 bg-gradient-to-br from-gold-950 via-charcoal-900 to-warmgray-900 p-6 sm:p-8 flex flex-col justify-between text-white">
-                  <div className="space-y-2">
-                    <span className="px-3 py-1 rounded-full bg-gold-500/30 border border-gold-400 text-gold-300 text-[10px] uppercase tracking-widest font-bold inline-block">
-                      Tina Manna Kitchen
-                    </span>
-                    <h3 className="font-serif text-xl sm:text-2xl font-bold text-white leading-tight">
-                      Handcrafted Fresh On Order Date
-                    </h3>
-                    <p className="text-xs text-warmgray-300 max-w-xs leading-relaxed font-normal">
-                      Custom artisanal wedding tiers, bento cakes, and luxury celebration cakes baked with 100% eggless gourmet perfection.
-                    </p>
-                  </div>
-
-                  <div className="pt-4 border-t border-gold-500/30 flex justify-between items-center">
-                    <span className="text-[11px] font-mono text-gold-300 font-bold">Kolkata Atelier</span>
-                    <Link
-                      href="/custom-cake"
-                      className="px-4 py-2 rounded-full bg-gold-500 hover:bg-gold-600 text-white text-xs font-bold uppercase tracking-wider shadow-sm transition-all"
-                    >
-                      Book Custom Order →
-                    </Link>
-                  </div>
-                </div>
-              )}
+              ) : null}
 
               {/* Dot Indicators */}
-              {slides.length > 1 && (
+              {!loading && slides.length > 1 && (
                 <div className="flex justify-center space-x-2 mt-3">
                   {slides.map((_, i) => (
                     <button

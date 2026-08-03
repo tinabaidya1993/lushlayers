@@ -3,39 +3,19 @@ import { revalidatePath } from 'next/cache';
 import { connectToDatabase } from '@/lib/db';
 import Cake from '@/models/Cake';
 
-// In-memory cache for ultra-fast ISR performance (1 min TTL)
-let cachedCakesData: { timestamp: number; data: any[] } | null = null;
-const CACHE_TTL_MS = 60 * 1000;
+export const dynamic = 'force-dynamic';
 
 export async function GET(req: NextRequest) {
   try {
-    const now = Date.now();
-    
-    // Serve from ultra-fast in-memory cache if fresh
-    if (cachedCakesData && now - cachedCakesData.timestamp < CACHE_TTL_MS) {
+    const conn = await connectToDatabase();
+    if (!conn) {
       return NextResponse.json(
-        {
-          success: true,
-          count: cachedCakesData.data.length,
-          cakes: cachedCakesData.data,
-          cached: true,
-        },
-        {
-          headers: {
-            'Cache-Control': 'public, max-age=60, s-maxage=3600, stale-while-revalidate=86400',
-          },
-        }
+        { success: true, count: 0, cakes: [] },
+        { headers: { 'Cache-Control': 'no-store, no-cache, must-revalidate, proxy-revalidate' } }
       );
     }
 
-    const conn = await connectToDatabase();
-    if (!conn) {
-      return NextResponse.json({ success: true, count: 0, cakes: [] });
-    }
-
     const cakes = await Cake.find({}).sort({ createdAt: -1 }).lean();
-
-    cachedCakesData = { timestamp: now, data: cakes || [] };
 
     return NextResponse.json(
       {
@@ -45,7 +25,7 @@ export async function GET(req: NextRequest) {
       },
       {
         headers: {
-          'Cache-Control': 'public, max-age=60, s-maxage=3600, stale-while-revalidate=86400',
+          'Cache-Control': 'no-store, no-cache, must-revalidate, proxy-revalidate',
         },
       }
     );
@@ -53,14 +33,14 @@ export async function GET(req: NextRequest) {
     console.error('MongoDB GET cakes error:', error);
     return NextResponse.json(
       {
-        success: true,
-        count: cachedCakesData ? cachedCakesData.data.length : 0,
-        cakes: cachedCakesData ? cachedCakesData.data : [],
-        fallback: true,
+        success: false,
+        count: 0,
+        cakes: [],
+        error: error.message || 'Failed to fetch cakes from MongoDB',
       },
       {
         headers: {
-          'Cache-Control': 'no-store',
+          'Cache-Control': 'no-store, no-cache, must-revalidate, proxy-revalidate',
         },
       }
     );
@@ -78,9 +58,6 @@ export async function POST(req: NextRequest) {
 
     const newCake = await Cake.create(body);
 
-    cachedCakesData = null; // Invalidate cache
-
-    // On-Demand ISR Revalidation
     try {
       revalidatePath('/', 'page');
       revalidatePath('/catalog', 'page');
@@ -110,9 +87,6 @@ export async function PUT(req: NextRequest) {
       upsert: true,
     });
 
-    cachedCakesData = null; // Invalidate cache
-
-    // On-Demand ISR Revalidation
     try {
       revalidatePath('/', 'page');
       revalidatePath('/catalog', 'page');
@@ -140,9 +114,6 @@ export async function DELETE(req: NextRequest) {
 
     const result = await Cake.deleteOne({ $or: [{ id: id }, { _id: id.match(/^[0-9a-fA-F]{24}$/) ? id : null }] });
 
-    cachedCakesData = null; // Invalidate cache
-
-    // On-Demand ISR Revalidation
     try {
       revalidatePath('/', 'page');
       revalidatePath('/catalog', 'page');

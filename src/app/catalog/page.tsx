@@ -147,8 +147,15 @@ export default function CatalogPage() {
 
         {/* Catalog Grid View */}
         {loading ? (
-          <div className="py-20 text-center text-xs font-bold text-warmgray-500">
-            Loading live cake gallery...
+          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3.5 sm:gap-6">
+            {[1, 2, 3, 4, 5, 6, 7, 8].map((i) => (
+              <div key={i} className="bg-white rounded-2xl border border-warmgray-200 p-3 space-y-3 animate-pulse shadow-xs">
+                <div className="w-full aspect-[4/3] bg-warmgray-200 rounded-xl"></div>
+                <div className="w-3/4 h-4 bg-warmgray-200 rounded"></div>
+                <div className="w-1/2 h-3 bg-warmgray-200 rounded"></div>
+                <div className="w-full h-8 bg-warmgray-200 rounded-xl mt-2"></div>
+              </div>
+            ))}
           </div>
         ) : filteredCakes.length === 0 ? (
           <div className="py-16 text-center bg-white rounded-3xl border border-warmgray-200 p-8 space-y-3 shadow-xs">

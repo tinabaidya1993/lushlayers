@@ -3,11 +3,16 @@ import { revalidatePath } from 'next/cache';
 import { connectToDatabase } from '@/lib/db';
 import Category from '@/models/Category';
 
+export const dynamic = 'force-dynamic';
+
 export async function GET(req: NextRequest) {
   try {
     const conn = await connectToDatabase();
     if (!conn) {
-      return NextResponse.json({ success: true, count: 0, categories: [] });
+      return NextResponse.json(
+        { success: true, count: 0, categories: [] },
+        { headers: { 'Cache-Control': 'no-store, no-cache, must-revalidate, proxy-revalidate' } }
+      );
     }
 
     const categories = await Category.find({}).sort({ createdAt: 1 }).lean();
@@ -15,12 +20,12 @@ export async function GET(req: NextRequest) {
     return NextResponse.json(
       {
         success: true,
-        count: categories.length,
+        count: categories ? categories.length : 0,
         categories: categories || [],
       },
       {
         headers: {
-          'Cache-Control': 'public, max-age=60, s-maxage=3600, stale-while-revalidate=86400',
+          'Cache-Control': 'no-store, no-cache, must-revalidate, proxy-revalidate',
         },
       }
     );
@@ -33,7 +38,7 @@ export async function GET(req: NextRequest) {
       },
       {
         headers: {
-          'Cache-Control': 'no-store',
+          'Cache-Control': 'no-store, no-cache, must-revalidate, proxy-revalidate',
         },
       }
     );

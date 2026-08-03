@@ -9,9 +9,11 @@ import { buildCakeInquiryWhatsAppUrl } from '@/lib/whatsapp';
 
 export default function SignatureCollection() {
   const [cakes, setCakes] = useState<CakeItem[]>([]);
+  const [loading, setLoading] = useState(true);
   const [selectedCake, setSelectedCake] = useState<CakeItem | null>(null);
 
   useEffect(() => {
+    setLoading(true);
     fetch(`/api/cakes?t=${Date.now()}`, { cache: 'no-store' })
       .then((res) => res.json())
       .then((data) => {
@@ -21,15 +23,38 @@ export default function SignatureCollection() {
           setCakes([]);
         }
       })
-      .catch(() => setCakes([]));
+      .catch(() => setCakes([]))
+      .finally(() => setLoading(false));
   }, []);
 
   const signatureCakes = cakes.filter(
     (c) => c.category === 'signature' || c.category === 'wedding' || c.featured
   ).slice(0, 2);
 
-  if (signatureCakes.length === 0) {
-    return null; // Return null if no signature cakes exist
+  if (loading) {
+    return (
+      <section className="py-10 sm:py-14 bg-cream-50 text-charcoal-900 relative">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-4">
+          <div className="w-48 h-6 bg-cream-200 rounded animate-pulse"></div>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-6">
+            {[1, 2].map((i) => (
+              <div key={i} className="bg-white rounded-2xl border border-warmgray-200 p-4 animate-pulse flex space-x-4">
+                <div className="w-1/3 aspect-square bg-warmgray-200 rounded-xl"></div>
+                <div className="w-2/3 space-y-2">
+                  <div className="w-3/4 h-4 bg-warmgray-200 rounded"></div>
+                  <div className="w-1/2 h-3 bg-warmgray-200 rounded"></div>
+                  <div className="w-full h-8 bg-warmgray-200 rounded-xl mt-4"></div>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+    );
+  }
+
+  if (!loading && signatureCakes.length === 0) {
+    return null; // Return null if no signature cakes exist in MongoDB
   }
 
   return (

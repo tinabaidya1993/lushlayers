@@ -3,11 +3,16 @@ import { revalidatePath } from 'next/cache';
 import { connectToDatabase } from '@/lib/db';
 import HeroSlide from '@/models/HeroSlide';
 
+export const dynamic = 'force-dynamic';
+
 export async function GET(req: NextRequest) {
   try {
     const conn = await connectToDatabase();
     if (!conn) {
-      return NextResponse.json({ success: true, count: 0, slides: [] });
+      return NextResponse.json(
+        { success: true, count: 0, slides: [] },
+        { headers: { 'Cache-Control': 'no-store, no-cache, must-revalidate, proxy-revalidate' } }
+      );
     }
 
     const slides = await HeroSlide.find({}).sort({ orderIndex: 1, createdAt: -1 }).lean();
@@ -20,7 +25,7 @@ export async function GET(req: NextRequest) {
       },
       {
         headers: {
-          'Cache-Control': 'public, max-age=60, s-maxage=3600, stale-while-revalidate=86400',
+          'Cache-Control': 'no-store, no-cache, must-revalidate, proxy-revalidate',
         },
       }
     );
@@ -33,7 +38,7 @@ export async function GET(req: NextRequest) {
       },
       {
         headers: {
-          'Cache-Control': 'no-store',
+          'Cache-Control': 'no-store, no-cache, must-revalidate, proxy-revalidate',
         },
       }
     );

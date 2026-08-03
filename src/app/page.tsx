@@ -7,8 +7,8 @@ import Link from 'next/link';
 import { MessageCircle, Phone, MapPin, Clock, Sparkles, User } from 'lucide-react';
 import { buildGeneralInquiryWhatsAppUrl } from '@/lib/whatsapp';
 
-// SSG + ISR (Incremental Static Regeneration)
-export const revalidate = 60;
+export const dynamic = 'force-dynamic';
+export const revalidate = 0;
 
 export default function Home() {
   const whatsappUrl = buildGeneralInquiryWhatsAppUrl();

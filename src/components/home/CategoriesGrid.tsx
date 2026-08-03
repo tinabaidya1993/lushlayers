@@ -53,8 +53,8 @@ export default function CategoriesGrid() {
       try {
         setLoading(true);
         const [catRes, cakesRes] = await Promise.all([
-          fetch('/api/categories'),
-          fetch('/api/cakes'),
+          fetch('/api/categories?t=' + Date.now(), { cache: 'no-store' }),
+          fetch('/api/cakes?t=' + Date.now(), { cache: 'no-store' }),
         ]);
 
         const catData = await catRes.json();
@@ -127,14 +127,19 @@ export default function CategoriesGrid() {
           </div>
 
           <span className="text-[10px] text-gold-800 font-bold uppercase tracking-widest bg-gold-50 px-2.5 py-0.5 rounded-full border border-gold-300/80">
-            {visibleCategories.length} {visibleCategories.length === 1 ? 'Category' : 'Categories'}
+            {loading ? '...' : `${visibleCategories.length} Categories`}
           </span>
         </div>
 
         {/* ULTRA-THIN COLLAPSED BY DEFAULT DROPDOWN LIST WITH SMOOTH ANIMATIONS */}
         {loading ? (
-          <div className="py-8 text-center text-xs text-warmgray-500 font-medium">
-            Loading categories...
+          <div className="space-y-2.5">
+            {[1, 2, 3].map((i) => (
+              <div key={i} className="w-full h-11 bg-white rounded-xl border border-warmgray-200 animate-pulse p-3 flex justify-between items-center">
+                <div className="w-32 h-4 bg-warmgray-200 rounded"></div>
+                <div className="w-16 h-3 bg-warmgray-200 rounded"></div>
+              </div>
+            ))}
           </div>
         ) : visibleCategories.length === 0 ? (
           <div className="p-8 text-center bg-white rounded-2xl border border-warmgray-200 space-y-2">

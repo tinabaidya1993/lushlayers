@@ -50,6 +50,29 @@ export default function FeaturedSection() {
     setSelectedOrderPrice(price || cake.priceStartingFrom);
   };
 
+  if (loading) {
+    return (
+      <div className="bg-white text-charcoal-900 py-10 sm:py-14 border-b border-warmgray-200/60">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-6">
+          <div className="flex justify-between items-center">
+            <div className="w-48 h-6 bg-cream-200 rounded animate-pulse"></div>
+            <div className="w-24 h-4 bg-cream-200 rounded animate-pulse"></div>
+          </div>
+          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3.5 sm:gap-6">
+            {[1, 2, 3, 4].map((i) => (
+              <div key={i} className="bg-cream-50 rounded-2xl border border-warmgray-200 p-3 space-y-3 animate-pulse">
+                <div className="w-full aspect-[4/3] bg-warmgray-200/70 rounded-xl"></div>
+                <div className="w-3/4 h-4 bg-warmgray-200/80 rounded"></div>
+                <div className="w-1/2 h-3 bg-warmgray-200/60 rounded"></div>
+                <div className="w-full h-8 bg-warmgray-200/70 rounded-xl"></div>
+              </div>
+            ))}
+          </div>
+        </div>
+      </div>
+    );
+  }
+
   if (!loading && cakes.length === 0) {
     return (
       <section className="py-12 bg-white text-charcoal-900 border-b border-warmgray-200">

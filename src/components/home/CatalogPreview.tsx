@@ -9,9 +9,11 @@ import { Sparkles, ArrowRight } from 'lucide-react';
 
 export default function CatalogPreview() {
   const [cakes, setCakes] = useState<CakeItem[]>([]);
+  const [loading, setLoading] = useState(true);
   const [selectedCake, setSelectedCake] = useState<CakeItem | null>(null);
 
   useEffect(() => {
+    setLoading(true);
     fetch(`/api/cakes?t=${Date.now()}`, { cache: 'no-store' })
       .then((res) => res.json())
       .then((data) => {
@@ -21,12 +23,35 @@ export default function CatalogPreview() {
           setCakes([]);
         }
       })
-      .catch(() => setCakes([]));
+      .catch(() => setCakes([]))
+      .finally(() => setLoading(false));
   }, []);
 
   const previewCakes = cakes.slice(0, 4);
 
-  if (previewCakes.length === 0) {
+  if (loading) {
+    return (
+      <section className="py-10 sm:py-14 bg-white text-charcoal-900 relative border-t border-warmgray-200/60">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-6">
+          <div className="flex justify-between items-center">
+            <div className="w-48 h-6 bg-cream-200 rounded animate-pulse"></div>
+            <div className="w-20 h-4 bg-cream-200 rounded animate-pulse"></div>
+          </div>
+          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3.5 sm:gap-6">
+            {[1, 2, 3, 4].map((i) => (
+              <div key={i} className="bg-cream-50 rounded-2xl border border-warmgray-200 p-3 space-y-3 animate-pulse">
+                <div className="w-full aspect-[4/3] bg-warmgray-200 rounded-xl"></div>
+                <div className="w-3/4 h-4 bg-warmgray-200 rounded"></div>
+                <div className="w-1/2 h-3 bg-warmgray-200 rounded"></div>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+    );
+  }
+
+  if (!loading && previewCakes.length === 0) {
     return null;
   }
 
